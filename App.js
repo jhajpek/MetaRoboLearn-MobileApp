@@ -1,0 +1,35 @@
+import { NavigationContainer } from "@react-navigation/native";
+import { createStackNavigator } from "@react-navigation/stack";
+import { StatusBar } from "react-native";
+import { useEffect } from "react";
+import * as NavigationBar from "expo-navigation-bar";
+import Home from "./pages/Home";
+import Games  from "./pages/Games";
+import Controller from "./pages/Controller";
+
+const Routes = createStackNavigator();
+
+export default function App() {
+
+    useEffect(() => {
+        const controlNavigationBar = async () => {
+            await NavigationBar.setBehaviorAsync("inset-swipe");
+            await NavigationBar.setVisibilityAsync("hidden");
+        };
+
+        controlNavigationBar()
+    }, []);
+
+    return (
+        <NavigationContainer>
+            <StatusBar hidden={ true } />
+            <Routes.Navigator id={ "router" }
+                              initialRouteName="Home"
+                              screenOptions={{ headerShown: false }}>
+                <Routes.Screen name="Home" component={ Home } />
+                <Routes.Screen name="Games" component={ Games } />
+                <Routes.Screen name="Controller" component={ Controller } />
+            </Routes.Navigator>
+        </NavigationContainer>
+    );
+};

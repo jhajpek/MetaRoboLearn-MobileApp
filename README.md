@@ -1,2 +1,2 @@
-# MetaRoboLearn-MobileApp
+# MetaRoboLearn mobilna aplikacija
  Mobilna aplikacija za napredno upravljanje robotom
