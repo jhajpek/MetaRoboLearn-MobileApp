@@ -1,7 +1,7 @@
-import { SafeAreaView, StyleSheet, Dimensions, FlatList, View, Text } from "react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { getStatusBarHeight } from "react-native-status-bar-height";
+import { SafeAreaView, StyleSheet, Dimensions, FlatList, View } from "react-native";
+import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import Header from "../components/Header";
+import Triangles from "../components/Triangles";
 import Game from "../components/Game";
 import Footer from "../components/Footer";
 
@@ -13,43 +13,61 @@ const GAMES = [
 ];
 
 const Games = () => {
-
+    const insets = useSafeAreaInsets();
     const styles = StyleSheet.create({
         container: {
-            flex: 1,
+            display: "flex",
+            flexDirection: "row",
+            width: WIDTH,
+        },
+        blackView: {
+            height: HEIGHT,
+            width: insets.left,
+            backgroundColor: "black",
+        },
+        container2: {
             display: "flex",
             flexDirection: "column",
-            width: WIDTH + getStatusBarHeight(),
+            width: WIDTH - insets.left * 2,
+            backgroundColor: "rgba(0, 200, 204, 0.4)",
         },
         body: {
-            flex: 1,
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-evenly",
+            position: "relative",
             height:  HEIGHT * 0.745,
-            backgroundColor: "#8AE6E8",
         },
         list: {
-            gap: WIDTH * 0.2 + 10,
+            gap: WIDTH * 0.2 - insets.left,
             justifyContent: "center",
             alignItems: "center",
-            paddingLeft: WIDTH * 0.2,
-            paddingRight: WIDTH * 0.2 + 20,
+            paddingLeft: WIDTH * 0.2 - insets.left,
+            paddingRight: WIDTH * 0.2 - insets.left,
         },
     });
 
     return (
         <SafeAreaProvider edges={ ["top", "bottom", "left", "right"] }>
             <SafeAreaView style={ styles.container }>
-                <Header forLogin={ false } />
-                <View style={ styles.body }>
-                    <FlatList data={ GAMES }
-                              keyExtractor={ (game) => game.id }
-                              horizontal={ true }
-                              showsHorizontalScrollIndicator={ false }
-                              contentContainerStyle={ styles.list }
-                              renderItem={({ item }) => (
-                                  <Game name={ item.name } description={ item.description } route={ "Controller" } />
-                              )} />
+                <View style={ styles.blackView }></View>
+                <View style={ styles.container2 }>
+                    <Header forLogin={ false } />
+                    <View style={ styles.body }>
+                        <Triangles trianglesHeight={ HEIGHT * 0.745 } />
+                        <FlatList data={ GAMES }
+                                  keyExtractor={ (game) => game.id }
+                                  horizontal={ true }
+                                  showsHorizontalScrollIndicator={ false }
+                                  contentContainerStyle={ styles.list }
+                                  renderItem={({ item }) => (
+                                      <Game name={ item.name } description={ item.description } />
+                                  )} />
+                    </View>
+                    <Footer forLogin={ false } />
                 </View>
-                <Footer forLogin={ false } />
+                <View style={ styles.blackView }></View>
             </SafeAreaView>
         </SafeAreaProvider>
     );

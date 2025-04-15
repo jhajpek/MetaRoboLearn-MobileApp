@@ -81,7 +81,7 @@ const Triangles = ({ trianglesHeight }) => {
                          height={ trianglesHeight / SHADES.length + 1 }
                          width="300%"
                          style={{ alignSelf: "center", margin: 0, padding: 0 }}>
-                        { renderTiles(colours, index, trianglesHeight / SHADES.length) }
+                         { renderTiles(colours, index, trianglesHeight / SHADES.length) }
                     </Svg>
                 </Animation>)) }
         </View>

@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity, StyleSheet, Linking, Dimensions } from "react-native";
+import { View, Text, StyleSheet, Linking, Dimensions, TouchableOpacity } from "react-native";
+
 
 const HEIGHT = Dimensions.get("screen").height * 0.085;
 
@@ -18,12 +19,12 @@ const Footer = ({ forLogin }) => {
     });
 
     return (
-        <View style={ styles.container }>
-            <Text style={{ color: "white" }}>U suradnji s </Text>
+        <View style={styles.container}>
+            <Text style={{ color: "#FFF" }}>U suradnji s </Text>
             <TouchableOpacity onPress={ () => Linking.openURL("https://www.fer.unizg.hr/") }>
-                <Text style={{ color: "white", textDecorationLine: "underline" }}>
+                <Text style={{ color: "#FFF", textDecorationLine: "underline" }}>
                     Fakultetom elektrotehnike i računarstva
-                </Text>         
+                </Text>
             </TouchableOpacity>
         </View>
     );

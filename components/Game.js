@@ -1,9 +1,9 @@
-import {Dimensions, StyleSheet, Text, TouchableOpacity, View} from "react-native";
+import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
 const { height: HEIGHT, width: WIDTH } = Dimensions.get("screen");
 
-const Game = ({ name, description, route }) => {
+const Game = ({ name, description }) => {
     const navigation = useNavigation();
 
     return (
@@ -17,7 +17,7 @@ const Game = ({ name, description, route }) => {
 
                 <TouchableOpacity
                     style={ styles.button }
-                    onPress={ () => navigation.navigate(route) }
+                    onPress={ () => navigation.navigate("Controller") }
                 >
                     <Text style={ styles.buttonText }>Zaigraj!</Text>
                 </TouchableOpacity>
@@ -36,7 +36,8 @@ const styles = StyleSheet.create({
         borderWidth: 3,
         borderColor: "#00B6BA",
         borderStyle: "solid",
-        backgroundColor: "rgba(0, 200, 204, 0.4)",
+        backgroundColor: "rgba(0, 200, 204, 0.8)",
+        zIndex: 1,
     },
     title: {
         height: "20%",
@@ -62,17 +63,23 @@ const styles = StyleSheet.create({
     },
     button: {
         alignSelf: "center",
-        backgroundColor: "#00C8CC",
         paddingVertical: 10,
         paddingHorizontal: 20,
         borderRadius: 10,
+        borderWidth: 3,
+        borderColor: "#FFF",
+        borderStyle: "solid",
         width: WIDTH / 3,
     },
     buttonText: {
-        color: "white",
+        color: "#FFF",
         fontSize: 24,
         fontWeight: "600",
+        textShadowColor: "rgba(0, 0, 0, 0.8)",
+        textShadowOffset: { width: 1, height: 1 },
+        textShadowRadius: 2,
         textAlign: "center",
+        textAlignVertical: "center",
     },
 });
 

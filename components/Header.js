@@ -1,6 +1,5 @@
 import { View, Text, Image, StyleSheet, Alert, TouchableOpacity, Dimensions } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import {getStatusBarHeight} from "react-native-status-bar-height";
 
 const ALERT_TITLE = "O nama";
 const ALERT_MESSAGE = "ZPR projekt u sklopu završnih radova";
@@ -25,13 +24,11 @@ const Header = ({ forLogin }) => {
             display: "flex",
             flexDirection: "row",
             alignItems: "center",
-            paddingLeft: getStatusBarHeight() / 2,
         },
         right: {
             display: "flex",
             flexDirection: "row",
             alignItems: "center",
-            paddingRight: (Dimensions.get("screen").width - Dimensions.get("window").width) / 2,
         },
         logo: {
             width: 35,

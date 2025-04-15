@@ -12,12 +12,12 @@ const Routes = createStackNavigator();
 export default function App() {
 
     useEffect(() => {
-        const controlNavigationBar = async () => {
+        const hideNavigationBar = async () => {
             await NavigationBar.setBehaviorAsync("inset-swipe");
             await NavigationBar.setVisibilityAsync("hidden");
         };
 
-        controlNavigationBar()
+        hideNavigationBar()
     }, []);
 
     return (

@@ -1,20 +1,29 @@
-import { SafeAreaView, View, Text, Image, StyleSheet, Dimensions } from "react-native";
-import { getStatusBarHeight } from "react-native-status-bar-height";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaView, View, Text, StyleSheet, Dimensions } from "react-native";
+import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import Header from "../components/Header";
 import Triangles from "../components/Triangles";
+import JumpingRobot from "../components/JumpingRobot";
 import Footer from "../components/Footer";
 
 const { height: HEIGHT, width: WIDTH } = Dimensions.get("screen");
 
 const Home = () => {
-
+    const insets = useSafeAreaInsets()
     const styles = StyleSheet.create({
         container: {
-            flex: 1,
+            display: "flex",
+            flexDirection: "row",
+            width: WIDTH,
+        },
+        blackView: {
+            height: HEIGHT,
+            width: insets.left,
+            backgroundColor: "black",
+        },
+        container2: {
             display: "flex",
             flexDirection: "column",
-            width: WIDTH + getStatusBarHeight() + 1,
+            width: WIDTH - insets.left * 2,
             backgroundColor: "rgba(0, 200, 204, 0.4)",
         },
         body: {
@@ -24,8 +33,6 @@ const Home = () => {
             justifyContent: "space-evenly",
             position: "relative",
             height:  HEIGHT * 0.745,
-            paddingLeft: getStatusBarHeight(),
-            margin: 0,
         },
         titleContainer: {
             alignItems: "center",
@@ -40,26 +47,26 @@ const Home = () => {
             textShadowOffset: { width: 2, height: 2 },
             textShadowRadius: 4
         },
-        image: {
-            width: HEIGHT * 0.8,
-            height: HEIGHT * 0.8,
-        },
     });
 
     return (
         <SafeAreaProvider edges={ ["top", "bottom", "left", "right"] }>
             <SafeAreaView style={ styles.container }>
-                <Header forLogin={ true } />
-                <View style={ styles.body }>
-                    <Triangles trianglesHeight={ HEIGHT * 0.745 } />
-                    <View style={ styles.titleContainer }>
-                        <Text style={ styles.title }>
-                            {"Dobrodošli u\nMetaRoboLearn\nsvijet!"}
-                        </Text>
+                <View style={ styles.blackView }></View>
+                <View style={ styles.container2 }>
+                    <Header forLogin={ true } />
+                    <View style={ styles.body }>
+                        <Triangles trianglesHeight={ HEIGHT * 0.745 } />
+                        <View style={ styles.titleContainer }>
+                            <Text style={ styles.title }>
+                                {"Dobrodošli u\nMetaRoboLearn\nsvijet!"}
+                            </Text>
+                        </View>
+                        <JumpingRobot />
                     </View>
-                    <Image source={ require("../assets/robot.png") } style={ styles.image } />
+                    <Footer forLogin={ true } />
                 </View>
-                <Footer forLogin={ true } />
+                <View style={ styles.blackView }></View>
             </SafeAreaView>
         </SafeAreaProvider>
     );
