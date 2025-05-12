@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Linking, Dimensions, TouchableOpacity } from "r
 
 const HEIGHT = Dimensions.get("screen").height * 0.085;
 
-const Footer = ({ forLogin }) => {
+const Footer = () => {
 
     const styles = StyleSheet.create({
         container: {
@@ -11,7 +11,7 @@ const Footer = ({ forLogin }) => {
             flexDirection: "row",
             justifyContent: "center",
             alignItems: "center",
-            backgroundColor: forLogin ? "rgba(0, 200, 204, 0.4)" : "rgba(0, 200, 204, 0.8)",
+            backgroundColor: "rgba(0, 200, 204, 0.4)",
             padding: 5,
             zIndex: 1,
             height: HEIGHT,

@@ -64,7 +64,7 @@ const Home = () => {
                         </View>
                         <JumpingRobot />
                     </View>
-                    <Footer forLogin={ true } />
+                    <Footer />
                 </View>
                 <View style={ styles.blackView }></View>
             </SafeAreaView>

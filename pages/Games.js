@@ -8,8 +8,8 @@ import Footer from "../components/Footer";
 const { height: HEIGHT, width: WIDTH } = Dimensions.get("screen");
 const GAMES = [
     { id: 1, name: "Slobodna vožnja", description: "Pruža kontrolu nad robotom u Vašem i robotovom okruženju!" },
-    { id: 2, name: "Križić - Kružić", description: "Zaigrajte igricu koju svi volimo, ali bez olovke i papira! Na kvadratić gdje želite staviti svoj znak dovezite robota te stisnite OK!"},
-    { id: 3, name: "Igra s kamerom", description: "Nešto što se doda kad dođe kamera."},
+    { id: 2, name: "Križić - Kružić", description: "Zaigrajte igricu koju svi volimo, ali bez olovke i papira! Na kvadratić gdje želite staviti svoj znak dovezite robota te stisnite OK!" },
+    { id: 3, name: "Igra s kamerom", description: "Nešto što se doda kad dođe kamera." },
 ];
 
 const Games = () => {

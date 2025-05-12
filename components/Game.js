@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
         borderWidth: 3,
         borderColor: "#00B6BA",
         borderStyle: "solid",
-        backgroundColor: "rgba(0, 200, 204, 0.8)",
+        backgroundColor: "rgba(0, 200, 204, 0.6)",
         zIndex: 1,
     },
     title: {

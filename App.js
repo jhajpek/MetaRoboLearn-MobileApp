@@ -1,6 +1,6 @@
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import { StatusBar } from "react-native";
+import { Platform, StatusBar } from "react-native";
 import { useEffect } from "react";
 import * as NavigationBar from "expo-navigation-bar";
 import Home from "./pages/Home";
@@ -13,8 +13,10 @@ export default function App() {
 
     useEffect(() => {
         const hideNavigationBar = async () => {
-            await NavigationBar.setBehaviorAsync("inset-swipe");
-            await NavigationBar.setVisibilityAsync("hidden");
+            if(Platform.OS === "android") {
+                await NavigationBar.setBehaviorAsync("inset-swipe");
+                await NavigationBar.setVisibilityAsync("hidden");
+            }
         };
 
         hideNavigationBar()

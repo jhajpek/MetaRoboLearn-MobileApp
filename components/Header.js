@@ -15,7 +15,7 @@ const Header = ({ forLogin }) => {
             flexDirection: "row",
             justifyContent: "space-between",
             alignItems: "center",
-            backgroundColor: forLogin ? "rgba(0, 200, 204, 0.4)" : "rgba(0, 200, 204, 0.8)",
+            backgroundColor: "rgba(0, 200, 204, 0.4)",
             padding: 10,
             zIndex: 1,
             height: HEIGHT,

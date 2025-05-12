@@ -26,7 +26,7 @@ const JumpingRobot = () => {
 
     return (
         <TouchableWithoutFeedback onPress={ jump }>
-            <Animated.View style={{ transform: [{ translateY: translateY }]}}>
+            <Animated.View style={{ transform: [{ translateY: translateY }] }}>
                 <Image source={ require("../assets/robot.png") } style={ styles.image } />
             </Animated.View>
         </TouchableWithoutFeedback>
