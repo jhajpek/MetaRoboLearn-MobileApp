@@ -8,11 +8,11 @@ const getPolygonPoints = (direction, buttonSize) => {
 
     if(direction === "forward")
         return `${ center },${ left } ${ right },${ right } ${ left },${ right }`;
-    else if(direction === "turnLeft")
+    else if(direction === "turn_left")
         return `${ left },${ center } ${ right },${ left } ${ right },${ right }`;
-    else if(direction === "backward")
+    else if(direction === "back")
         return `${ left },${ left } ${ right },${ left } ${ center },${ right }`;
-    else if(direction === "turnRight")
+    else if(direction === "turn_right")
         return `${ left },${ left } ${ left },${ right } ${ right },${ center }`;
     else {
         let points = [];
@@ -22,7 +22,6 @@ const getPolygonPoints = (direction, buttonSize) => {
             let y = center + center * Math.sin(alpha);
             points.push(`${ x },${ y }`);
         }
-
         return points.join(" ");
     }
 };
@@ -37,11 +36,11 @@ const ControllerButton = ({ direction, buttonSize, play, bg }) => {
     });
 
     return (
-        <View style={[ styles.button, (direction !== "stop" && { borderRadius: buttonSize * 0.5 }) ]}>
+        <View style={[ styles.button, (direction !== "abort" && { borderRadius: buttonSize * 0.5 }) ]}>
             <Svg height={ buttonSize } width={ buttonSize }>
-                { direction === "stop" ?
+                { direction === "abort" ?
                     <>
-                        <Polygon points={ getPolygonPoints("stop", buttonSize) } fill={ play } stroke="#FFF" strokeWidth={ 3 } />
+                        <Polygon points={ getPolygonPoints("abort", buttonSize) } fill={ play } stroke="#FFF" strokeWidth={ 3 } />
                         <SvgText x={ buttonSize * 0.5 } y={ buttonSize * 0.5 }
                                  fontSize={ buttonSize * 0.3 }
                                  fontWeight="bold"

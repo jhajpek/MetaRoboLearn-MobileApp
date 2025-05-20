@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Linking, Dimensions, TouchableOpacity } from "r
 
 const HEIGHT = Dimensions.get("screen").height * 0.085;
 
+
 const Footer = () => {
 
     const styles = StyleSheet.create({

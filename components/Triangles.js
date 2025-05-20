@@ -12,6 +12,14 @@ const SHADES = [
     ["#FFE89E", "#FED857", "#E7BB29"],
 ];
 const ANIMATION_DURATION = 10;
+const styles = StyleSheet.create({
+    container: {
+        position: "absolute",
+        height: "100%",
+        width: "100%",
+        zIndex: -1
+    },
+});
 
 const Animation = ({ children, startingRight }) => {
     const translateX = useRef(new Animated.Value(0)).current;
@@ -81,20 +89,11 @@ const Triangles = ({ trianglesHeight }) => {
                          height={ trianglesHeight / SHADES.length + 1 }
                          width="300%"
                          style={{ alignSelf: "center", margin: 0, padding: 0 }}>
-                         { renderTiles(colours, index, trianglesHeight / SHADES.length) }
+                        { renderTiles(colours, index, trianglesHeight / SHADES.length) }
                     </Svg>
                 </Animation>)) }
         </View>
     );
 };
-
-const styles = StyleSheet.create({
-    container: {
-        position: "absolute",
-        height: "100%",
-        width: "100%",
-        zIndex: -1
-    },
-});
 
 export default Triangles;

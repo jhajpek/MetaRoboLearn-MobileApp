@@ -3,6 +3,12 @@ import { useRef } from "react";
 
 const HEIGHT = Dimensions.get("screen").height;
 const ANIMATION_DURATION = 0.5;
+const styles = StyleSheet.create({
+    image: {
+        width: HEIGHT * 0.6,
+        height: HEIGHT * 0.6,
+    },
+});
 
 
 const JumpingRobot = () => {
@@ -32,12 +38,5 @@ const JumpingRobot = () => {
         </TouchableWithoutFeedback>
     );
 };
-
-const styles = StyleSheet.create({
-    image: {
-        width: HEIGHT * 0.6,
-        height: HEIGHT * 0.6,
-    },
-});
 
 export default JumpingRobot;

@@ -1,31 +1,8 @@
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
+
 const { height: HEIGHT, width: WIDTH } = Dimensions.get("screen");
-
-const Game = ({ name, description }) => {
-    const navigation = useNavigation();
-
-    return (
-        <View style={ styles.container }>
-            <Text style={ styles.title }>{ name }</Text>
-
-            <View style={ styles.hr } />
-
-            <View style={ styles.descriptionAndPlay }>
-                <Text>{ description }</Text>
-
-                <TouchableOpacity
-                    style={ styles.button }
-                    onPress={ () => navigation.navigate("Controller") }
-                >
-                    <Text style={ styles.buttonText }>Zaigraj!</Text>
-                </TouchableOpacity>
-            </View>
-        </View>
-    );
-};
-
 const styles = StyleSheet.create({
     container: {
         display: "flex",
@@ -82,5 +59,28 @@ const styles = StyleSheet.create({
         textAlignVertical: "center",
     },
 });
+
+const Game = ({ name, description }) => {
+    const navigation = useNavigation();
+
+    return (
+        <View style={ styles.container }>
+            <Text style={ styles.title }>{ name }</Text>
+
+            <View style={ styles.hr } />
+
+            <View style={ styles.descriptionAndPlay }>
+                <Text>{ description }</Text>
+
+                <TouchableOpacity
+                    style={ styles.button }
+                    onPress={ () => navigation.navigate("Controller") }
+                >
+                    <Text style={ styles.buttonText }>Zaigraj!</Text>
+                </TouchableOpacity>
+            </View>
+        </View>
+    );
+};
 
 export default Game;

@@ -3,11 +3,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { useState, useEffect, useRef } from "react";
 import { Gyroscope, Accelerometer } from "expo-sensors";
+import Constants from "expo-constants";
 import axios from "axios";
 import ControllerButton from "../components/ControllerButton";
 
 
 const { height: HEIGHT, width: WIDTH } = Dimensions.get("screen");
+const url = Constants.expoConfig.extra.BACKEND_URL;
+const port = Constants.expoConfig.extra.BACKEND_PORT;
 const BUTTON_SIZE = 75;
 const GYROSCOPE_INTERVAL = 0.5;
 
@@ -17,10 +20,8 @@ const Controller = () => {
     const [pause, setPause] = useState(false);
     const [lastCommand, setLastCommand] = useState("");
     const [accelerometerOutput, setAccelerometerOutput] = useState({ x: 0, y: 0, z: 0 });
-    const [leftTurnFail, setLeftTurnFail] = useState(false);
-    const [rightTurnFail, setRightTurnFail] = useState(false);
-    const [duration, setDuration] = useState(1);
-    const [moveLength, setMoveLength] = useState(0);
+    const [duration, setDuration] = useState(1.);
+    const [speed, setSpeed] = useState(0.);
     const [handSide, setHandSide] = useState(true);
     const timeoutRef = useRef(null);
     const navigation = useNavigation();
@@ -114,86 +115,51 @@ const Controller = () => {
         },
     });
 
-    const executeCommand = async (command) => {
-        if(command === "abort") {
-            // fetch za stop, ako je uspjesan izvode se iduce naredbe
-            clearTimeout(timeoutRef.current);
-            setPause(false);
-            setLastCommand("");
-        } else if(!pause) {
-            // fetch za turn ili move, ako je uspjesan izvode se iduce naredbe
-            setPause(true);
-            setLastCommand(command);
-            timeoutRef.current = setTimeout(() => {
+    const execute = async (command, duration, gyro) => {
+        await axios.post(`${ url }:${ port }/execute`, {
+            "code": `${ command }(${ speed }, ${ duration })`
+        }).then((res) => {
+            if(res.status === 200) {
+                setLastCommand(command);
+                setPause(true);
+                timeoutRef.current = setTimeout(() => {
+                    if(!gyro) setLastCommand("");
+                    setPause(false);
+                }, duration * 1000);
+            }
+        }).catch(err => console.log(err));
+    };
+
+    const abort = async () => {
+        await axios.post(`${ url }:${ port }/abort`, {})
+            .then(() => {
+                clearTimeout(timeoutRef.current);
                 setLastCommand("");
                 setPause(false);
-            }, duration * 1000);
-        }
+            }).catch(err => console.log(err));
     };
 
     useEffect(() => {
         Gyroscope.setUpdateInterval(GYROSCOPE_INTERVAL);
         let gyroscopeIncome;
         if(gyroscopeOn) {
-            gyroscopeIncome = Gyroscope.addListener(({ x, y, z }) => {
-                if(pause) return;
+            gyroscopeIncome = Gyroscope.addListener(async ({x, y, z}) => {
+                if (pause) return;
 
-                if(Math.abs(accelerometerOutput.x) >= 2 ||
-                   Math.abs(accelerometerOutput.y) >= 2 ||
-                   Math.abs(accelerometerOutput.z) >= 2) {
-                    setAccelerometerOutput({ x: 0, y: 0, z: 0 });
+                if (Math.abs(accelerometerOutput.x) >= 2 ||
+                    Math.abs(accelerometerOutput.y) >= 2 ||
+                    Math.abs(accelerometerOutput.z) >= 2) {
+                    setAccelerometerOutput({x: 0, y: 0, z: 0});
                     setGyroscopeOn(false);
                     return;
                 }
 
                 if(Math.abs(x) > 0.75 || Math.abs(y) > 0.75) return;
 
-                if(z > 0.75 && lastCommand === "") {
-                    setPause(true);
-                    setLastCommand("turn_left");
-                    timeoutRef.current = setTimeout(() => {
-                        setPause(false);
-                    }, GYROSCOPE_INTERVAL * 1000);
-                }
-
-                else if(z < -0.75 && lastCommand === "") {
-                    setPause(true);
-                    setLastCommand("turn_right");
-                    timeoutRef.current = setTimeout(() => {
-                        setPause(false);
-                    }, GYROSCOPE_INTERVAL * 1000);
-                }
-
-                else if(z > 0.25 && lastCommand === "turn_right" ||
-                        z < -0.25 && lastCommand === "turn_left") {
-                    setPause(true);
-                    timeoutRef.current = setTimeout(() => {
-                        setLastCommand("");
-                        setPause(false);
-                    }, GYROSCOPE_INTERVAL * 1000 * 2);
-
-                }
-
-                /*
-                else if(gyroscopeOutput.z > 0.3 && z > 0) {
-                    setPause(true);
-                    setLastCommand("SKRENI LIJEVO");
-                    timeoutRef.current = setTimeout(() => {
-                        setLastCommand("");
-                        setPause(false);
-                    }, GYROSCOPE_INTERVAL * 1000);
-                }
-
-                else if(gyroscopeOutput.z < -0.3 && z < 0) {
-                    setPause(true);
-                    setLastCommand("SKRENI DESNO");
-                    timeoutRef.current = setTimeout(() => {
-                        setLastCommand("");
-                        setPause(false);
-                    }, GYROSCOPE_INTERVAL * 1000);
-                }
-                 */
-                setGyroscopeOutput({ x: x, y: y, z: z });
+                if(z > 0.75 && lastCommand === "") await execute("turn_left", GYROSCOPE_INTERVAL, true);
+                else if(z < -0.75 && lastCommand === "") await execute("turn_right", GYROSCOPE_INTERVAL, true);
+                else if(z > 0.25 && lastCommand === "turn_right" || z < -0.25 && lastCommand === "turn_left") await abort();
+                else if(lastCommand !== "") await execute(lastCommand, GYROSCOPE_INTERVAL, true);
             });
         } else gyroscopeIncome?.remove();
 
@@ -238,16 +204,16 @@ const Controller = () => {
                 </TouchableOpacity>
             </View>
             <View style={ styles.row }>
-                <Text style={ styles.label }>Duljina kretanja:</Text>
+                <Text style={ styles.label }>Brzina kretanja:</Text>
                 <TouchableOpacity style={ styles.adjustValuesButton }
-                                  onPress={ () => setMoveLength(prev => Math.max(0, prev - 1)) }>
+                                  onPress={ () => setSpeed(prev => Math.max(0, prev - 10)) }>
                     <View style={ styles.adjustValuesButton }>
                         <Text style={ styles.adjustValuesText }>-</Text>
                     </View>
                 </TouchableOpacity>
-                <Text style={ styles.currentValueText }>{ moveLength }</Text>
+                <Text style={ styles.currentValueText }>{ speed }</Text>
                 <TouchableOpacity style={ styles.adjustValuesButton }
-                                  onPress={ () => setMoveLength(prev => prev + 1) }>
+                                  onPress={ () => setSpeed(prev => prev + 10) }>
                     <View style={ styles.adjustValuesButton }>
                         <Text style={ styles.adjustValuesText }>+</Text>
                     </View>
@@ -263,27 +229,27 @@ const Controller = () => {
                     style={{ alignSelf: "center" }}
                 />
             </View>
-            <Text style={{ alignSelf: "center", fontSize: 30 }}>{`TRENUTNA NAREDBA:\n${ lastCommand }` }</Text>
+            <Text style={{ alignSelf: "center", fontSize: 30 }}>{`CURRENT COMMAND:\n${ lastCommand }` }</Text>
         </View>
     );
 
     const renderController = () => (
         <View style={ styles.controller }>
-            <TouchableOpacity onPress={ () => executeCommand("forward") }>
+            <TouchableOpacity onPress={ () => execute("forward", duration) }>
                 <ControllerButton direction={ "forward" } buttonSize={ BUTTON_SIZE } play={ "#FED857" } bg={ "#33D3D6" } />
             </TouchableOpacity>
             <View style={ styles.controllerMidSection }>
-                <TouchableOpacity onPress={ () => executeCommand("turn_left") }>
+                <TouchableOpacity onPress={ () => execute("turn_left", duration) }>
                     <ControllerButton direction={ "turn_left" } buttonSize={ BUTTON_SIZE } play={ "#33D3D6" } bg={ "#FED857" } />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={ () => executeCommand("abort") }>
+                <TouchableOpacity onPress={ () => { if(!pause) abort().then(() => {}); } }>
                     <ControllerButton direction={ "abort" } buttonSize={ BUTTON_SIZE } play={ "#FE7569" } bg={ "#8AE6E8" } />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={ () => executeCommand("turn_right") }>
+                <TouchableOpacity onPress={ () => execute("turn_right", duration) }>
                     <ControllerButton direction={ "turn_right" } buttonSize={ BUTTON_SIZE } play={ "#33D3D6" } bg={ "#FED857" } />
                 </TouchableOpacity>
             </View>
-            <TouchableOpacity onPress={ () => executeCommand("back") }>
+            <TouchableOpacity onPress={ () => execute("back", duration) }>
                 <ControllerButton direction={ "back" } buttonSize={ BUTTON_SIZE } play={ "#FED857" } bg={ "#33D3D6" } />
             </TouchableOpacity>
         </View>
