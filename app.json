@@ -1,26 +1,26 @@
 {
-    "expo": {
-        "name": "MetaRoboLearn-MobileApp",
-        "slug": "MetaRoboLearn-MobileApp",
-        "version": "1.0.0",
-        "orientation": "landscape",
-        "icon": "./assets/logo-black.png",
-        "userInterfaceStyle": "light",
-        "newArchEnabled": true,
-        "splash": {
-            "image": "./assets/logo-black.png",
-            "resizeMode": "contain"
-        },
-        "ios": {
-            "supportsTablet": true
-        },
-        "android": {
-            "adaptiveIcon": {
-                "foregroundImage": "./assets/logo-black.png"
-            }
-        },
-        "web": {
-            "favicon": "./assets/logo-black.png"
-        }
+  "expo": {
+    "name": "MetaRoboLearn",
+    "slug": "MetaRoboLearn",
+    "version": "1.0.0",
+    "orientation": "landscape",
+    "icon": "./assets/logo-black.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": false,
+    "splash": {
+      "image": "./assets/logo-black.png",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/logo-black.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/logo-black.png"
     }
+  }
 }

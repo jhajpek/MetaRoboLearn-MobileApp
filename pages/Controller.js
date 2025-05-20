@@ -1,13 +1,15 @@
-import { SafeAreaView, View, Text, StyleSheet, Dimensions, Switch, TouchableOpacity } from "react-native";
-import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
+import { View, Text, StyleSheet, Dimensions, Switch, TouchableOpacity } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
-import {useState, useEffect, useRef} from "react";
+import { useState, useEffect, useRef } from "react";
 import { Gyroscope, Accelerometer } from "expo-sensors";
+import axios from "axios";
 import ControllerButton from "../components/ControllerButton";
 
 
 const { height: HEIGHT, width: WIDTH } = Dimensions.get("screen");
 const BUTTON_SIZE = 75;
+const GYROSCOPE_INTERVAL = 0.5;
 
 
 const Controller = () => {
@@ -112,8 +114,8 @@ const Controller = () => {
         },
     });
 
-    const executeCommand = (command) => {
-        if(command === "STOP") {
+    const executeCommand = async (command) => {
+        if(command === "abort") {
             // fetch za stop, ako je uspjesan izvode se iduce naredbe
             clearTimeout(timeoutRef.current);
             setPause(false);
@@ -130,10 +132,12 @@ const Controller = () => {
     };
 
     useEffect(() => {
+        Gyroscope.setUpdateInterval(GYROSCOPE_INTERVAL);
         let gyroscopeIncome;
         if(gyroscopeOn) {
-            gyroscopeIncome = Gyroscope.addListener(({ x }) => {
+            gyroscopeIncome = Gyroscope.addListener(({ x, y, z }) => {
                 if(pause) return;
+
                 if(Math.abs(accelerometerOutput.x) >= 2 ||
                    Math.abs(accelerometerOutput.y) >= 2 ||
                    Math.abs(accelerometerOutput.z) >= 2) {
@@ -142,35 +146,54 @@ const Controller = () => {
                     return;
                 }
 
-                if(x >= 5.5) {
-                    if(leftTurnFail) return;
+                if(Math.abs(x) > 0.75 || Math.abs(y) > 0.75) return;
+
+                if(z > 0.75 && lastCommand === "") {
                     setPause(true);
-                    setLastCommand("SKRENI DESNO");
+                    setLastCommand("turn_left");
+                    timeoutRef.current = setTimeout(() => {
+                        setPause(false);
+                    }, GYROSCOPE_INTERVAL * 1000);
+                }
+
+                else if(z < -0.75 && lastCommand === "") {
+                    setPause(true);
+                    setLastCommand("turn_right");
+                    timeoutRef.current = setTimeout(() => {
+                        setPause(false);
+                    }, GYROSCOPE_INTERVAL * 1000);
+                }
+
+                else if(z > 0.25 && lastCommand === "turn_right" ||
+                        z < -0.25 && lastCommand === "turn_left") {
+                    setPause(true);
                     timeoutRef.current = setTimeout(() => {
                         setLastCommand("");
                         setPause(false);
-                    }, duration * 1000);
-                } else if(x >= 3.5) {
-                    setRightTurnFail(true);
-                    setTimeout(() => {
-                        setRightTurnFail(false);
-                    }, 1000);
+                    }, GYROSCOPE_INTERVAL * 1000 * 2);
+
                 }
 
-                if(x <= -5.5) {
-                    if(rightTurnFail) return;
+                /*
+                else if(gyroscopeOutput.z > 0.3 && z > 0) {
                     setPause(true);
                     setLastCommand("SKRENI LIJEVO");
                     timeoutRef.current = setTimeout(() => {
                         setLastCommand("");
                         setPause(false);
-                    }, duration * 1000);
-                } else if(x <= -3.5) {
-                    setLeftTurnFail(true);
-                    setTimeout(() => {
-                        setLeftTurnFail(false);
-                    }, 1000);
+                    }, GYROSCOPE_INTERVAL * 1000);
                 }
+
+                else if(gyroscopeOutput.z < -0.3 && z < 0) {
+                    setPause(true);
+                    setLastCommand("SKRENI DESNO");
+                    timeoutRef.current = setTimeout(() => {
+                        setLastCommand("");
+                        setPause(false);
+                    }, GYROSCOPE_INTERVAL * 1000);
+                }
+                 */
+                setGyroscopeOutput({ x: x, y: y, z: z });
             });
         } else gyroscopeIncome?.remove();
 
@@ -246,45 +269,43 @@ const Controller = () => {
 
     const renderController = () => (
         <View style={ styles.controller }>
-            <TouchableOpacity onPress={ () => executeCommand("NAPRIJED") }>
+            <TouchableOpacity onPress={ () => executeCommand("forward") }>
                 <ControllerButton direction={ "forward" } buttonSize={ BUTTON_SIZE } play={ "#FED857" } bg={ "#33D3D6" } />
             </TouchableOpacity>
             <View style={ styles.controllerMidSection }>
-                <TouchableOpacity onPress={ () => executeCommand("SKRENI LIJEVO") }>
-                    <ControllerButton direction={ "turnLeft" } buttonSize={ BUTTON_SIZE } play={ "#33D3D6" } bg={ "#FED857" } />
+                <TouchableOpacity onPress={ () => executeCommand("turn_left") }>
+                    <ControllerButton direction={ "turn_left" } buttonSize={ BUTTON_SIZE } play={ "#33D3D6" } bg={ "#FED857" } />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={ () => executeCommand("STOP") }>
-                    <ControllerButton direction={ "stop" } buttonSize={ BUTTON_SIZE } play={ "#FE7569" } bg={ "#8AE6E8" } />
+                <TouchableOpacity onPress={ () => executeCommand("abort") }>
+                    <ControllerButton direction={ "abort" } buttonSize={ BUTTON_SIZE } play={ "#FE7569" } bg={ "#8AE6E8" } />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={ () => executeCommand("SKRENI DESNO") }>
-                    <ControllerButton direction={ "turnRight" } buttonSize={ BUTTON_SIZE } play={ "#33D3D6" } bg={ "#FED857" } />
+                <TouchableOpacity onPress={ () => executeCommand("turn_right") }>
+                    <ControllerButton direction={ "turn_right" } buttonSize={ BUTTON_SIZE } play={ "#33D3D6" } bg={ "#FED857" } />
                 </TouchableOpacity>
             </View>
-            <TouchableOpacity onPress={ () => executeCommand("NAZAD") }>
-                <ControllerButton direction={ "backward" } buttonSize={ BUTTON_SIZE } play={ "#FED857" } bg={ "#33D3D6" } />
+            <TouchableOpacity onPress={ () => executeCommand("back") }>
+                <ControllerButton direction={ "back" } buttonSize={ BUTTON_SIZE } play={ "#FED857" } bg={ "#33D3D6" } />
             </TouchableOpacity>
         </View>
     );
 
 
     return (
-        <SafeAreaProvider edges={ ["top", "bottom", "left", "right"] }>
-            <SafeAreaView style={ styles.container }>
-                <View style={ styles.blackView }></View>
-                {
-                    handSide ?
-                        <>
-                            { renderSettings() }
-                            { renderController() }
-                        </> :
-                        <>
-                            { renderController() }
-                            { renderSettings() }
-                        </>
-                }
-                <View style={ styles.blackView }></View>
-            </SafeAreaView>
-        </SafeAreaProvider>
+        <View style={ styles.container }>
+            <View style={ styles.blackView }></View>
+            {
+                handSide ?
+                    <>
+                        { renderSettings() }
+                        { renderController() }
+                    </> :
+                    <>
+                        { renderController() }
+                        { renderSettings() }
+                    </>
+            }
+            <View style={ styles.blackView }></View>
+        </View>
     );
 };
 

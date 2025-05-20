@@ -13,7 +13,6 @@ const Home = () => {
         container: {
             display: "flex",
             flexDirection: "row",
-            width: WIDTH,
         },
         blackView: {
             height: HEIGHT,

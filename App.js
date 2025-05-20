@@ -2,6 +2,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { Platform, StatusBar } from "react-native";
 import { useEffect } from "react";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import * as NavigationBar from "expo-navigation-bar";
 import Home from "./pages/Home";
 import Games  from "./pages/Games";
@@ -19,19 +20,20 @@ export default function App() {
             }
         };
 
-        hideNavigationBar()
+        hideNavigationBar().then().catch(console.error);
     }, []);
 
     return (
-        <NavigationContainer>
-            <StatusBar hidden={ true } />
-            <Routes.Navigator id={ "router" }
-                              initialRouteName="Home"
-                              screenOptions={{ headerShown: false }}>
-                <Routes.Screen name="Home" component={ Home } />
-                <Routes.Screen name="Games" component={ Games } />
-                <Routes.Screen name="Controller" component={ Controller } />
-            </Routes.Navigator>
-        </NavigationContainer>
+        <SafeAreaProvider>
+            <NavigationContainer>
+                <StatusBar hidden={ true } />
+                <Routes.Navigator id={ undefined } initialRouteName="Home"
+                                  screenOptions={{ headerShown: false }}>
+                    <Routes.Screen name="Home" component={ Home } />
+                    <Routes.Screen name="Games" component={ Games } />
+                    <Routes.Screen name="Controller" component={ Controller } />
+                </Routes.Navigator>
+            </NavigationContainer>
+        </SafeAreaProvider>
     );
 };
