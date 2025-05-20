@@ -3,7 +3,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { useState, useEffect, useRef } from "react";
 import { Gyroscope, Accelerometer } from "expo-sensors";
-import axios from "axios";
 import ControllerButton from "../components/ControllerButton";
 
 
@@ -17,10 +16,8 @@ const Controller = () => {
     const [pause, setPause] = useState(false);
     const [lastCommand, setLastCommand] = useState("");
     const [accelerometerOutput, setAccelerometerOutput] = useState({ x: 0, y: 0, z: 0 });
-    const [leftTurnFail, setLeftTurnFail] = useState(false);
-    const [rightTurnFail, setRightTurnFail] = useState(false);
-    const [duration, setDuration] = useState(1);
-    const [moveLength, setMoveLength] = useState(0);
+    const [duration, setDuration] = useState(1.);
+    const [speed, setSpeed] = useState(0.);
     const [handSide, setHandSide] = useState(true);
     const timeoutRef = useRef(null);
     const navigation = useNavigation();
@@ -115,13 +112,11 @@ const Controller = () => {
     });
 
     const executeCommand = async (command) => {
-        if(command === "abort") {
-            // fetch za stop, ako je uspjesan izvode se iduce naredbe
+        if(command === "abort" && pause) {
             clearTimeout(timeoutRef.current);
             setPause(false);
             setLastCommand("");
         } else if(!pause) {
-            // fetch za turn ili move, ako je uspjesan izvode se iduce naredbe
             setPause(true);
             setLastCommand(command);
             timeoutRef.current = setTimeout(() => {
@@ -171,29 +166,7 @@ const Controller = () => {
                         setLastCommand("");
                         setPause(false);
                     }, GYROSCOPE_INTERVAL * 1000 * 2);
-
                 }
-
-                /*
-                else if(gyroscopeOutput.z > 0.3 && z > 0) {
-                    setPause(true);
-                    setLastCommand("SKRENI LIJEVO");
-                    timeoutRef.current = setTimeout(() => {
-                        setLastCommand("");
-                        setPause(false);
-                    }, GYROSCOPE_INTERVAL * 1000);
-                }
-
-                else if(gyroscopeOutput.z < -0.3 && z < 0) {
-                    setPause(true);
-                    setLastCommand("SKRENI DESNO");
-                    timeoutRef.current = setTimeout(() => {
-                        setLastCommand("");
-                        setPause(false);
-                    }, GYROSCOPE_INTERVAL * 1000);
-                }
-                 */
-                setGyroscopeOutput({ x: x, y: y, z: z });
             });
         } else gyroscopeIncome?.remove();
 
@@ -238,16 +211,16 @@ const Controller = () => {
                 </TouchableOpacity>
             </View>
             <View style={ styles.row }>
-                <Text style={ styles.label }>Duljina kretanja:</Text>
+                <Text style={ styles.label }>Brzina kretanja:</Text>
                 <TouchableOpacity style={ styles.adjustValuesButton }
-                                  onPress={ () => setMoveLength(prev => Math.max(0, prev - 1)) }>
+                                  onPress={ () => setSpeed(prev => Math.max(0, prev - 10)) }>
                     <View style={ styles.adjustValuesButton }>
                         <Text style={ styles.adjustValuesText }>-</Text>
                     </View>
                 </TouchableOpacity>
-                <Text style={ styles.currentValueText }>{ moveLength }</Text>
+                <Text style={ styles.currentValueText }>{ speed }</Text>
                 <TouchableOpacity style={ styles.adjustValuesButton }
-                                  onPress={ () => setMoveLength(prev => prev + 1) }>
+                                  onPress={ () => setSpeed(prev => prev + 10) }>
                     <View style={ styles.adjustValuesButton }>
                         <Text style={ styles.adjustValuesText }>+</Text>
                     </View>
@@ -263,7 +236,7 @@ const Controller = () => {
                     style={{ alignSelf: "center" }}
                 />
             </View>
-            <Text style={{ alignSelf: "center", fontSize: 30 }}>{`TRENUTNA NAREDBA:\n${ lastCommand }` }</Text>
+            <Text style={{ alignSelf: "center", fontSize: 30 }}>{`CURRENT COMMAND:\n${ lastCommand }` }</Text>
         </View>
     );
 

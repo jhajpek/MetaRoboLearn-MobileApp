@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Linking, Dimensions, TouchableOpacity } from "r
 
 const HEIGHT = Dimensions.get("screen").height * 0.085;
 
+
 const Footer = () => {
 
     const styles = StyleSheet.create({
@@ -20,7 +21,7 @@ const Footer = () => {
 
     return (
         <View style={styles.container}>
-            <Text style={{ color: "#FFF" }}>U suradnji s </Text>
+            <Text style={{ color: "#FFF" }}>Napravljeno u suradnji s </Text>
             <TouchableOpacity onPress={ () => Linking.openURL("https://www.fer.unizg.hr/") }>
                 <Text style={{ color: "#FFF", textDecorationLine: "underline" }}>
                     Fakultetom elektrotehnike i računarstva

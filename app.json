@@ -6,7 +6,7 @@
     "orientation": "landscape",
     "icon": "./assets/logo-black.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "splash": {
       "image": "./assets/logo-black.png",
       "resizeMode": "contain"

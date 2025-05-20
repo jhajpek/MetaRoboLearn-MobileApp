@@ -1,5 +1,5 @@
-import { SafeAreaView, View, Text, StyleSheet, Dimensions } from "react-native";
-import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
+import { View, Text, StyleSheet, Dimensions } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Header from "../components/Header";
 import Triangles from "../components/Triangles";
 import JumpingRobot from "../components/JumpingRobot";
@@ -49,25 +49,23 @@ const Home = () => {
     });
 
     return (
-        <SafeAreaProvider edges={ ["top", "bottom", "left", "right"] }>
-            <SafeAreaView style={ styles.container }>
-                <View style={ styles.blackView }></View>
-                <View style={ styles.container2 }>
-                    <Header forLogin={ true } />
-                    <View style={ styles.body }>
-                        <Triangles trianglesHeight={ HEIGHT * 0.745 } />
-                        <View style={ styles.titleContainer }>
-                            <Text style={ styles.title }>
-                                {"Dobrodošli u\nMetaRoboLearn\nsvijet!"}
-                            </Text>
-                        </View>
-                        <JumpingRobot />
+        <View style={ styles.container }>
+            <View style={ styles.blackView }></View>
+            <View style={ styles.container2 }>
+                <Header forLogin={ true } />
+                <View style={ styles.body }>
+                    <Triangles trianglesHeight={ HEIGHT * 0.745 } />
+                    <View style={ styles.titleContainer }>
+                        <Text style={ styles.title }>
+                            {"Dobrodošli u\nMetaRoboLearn\nsvijet!"}
+                        </Text>
                     </View>
-                    <Footer />
+                    <JumpingRobot />
                 </View>
-                <View style={ styles.blackView }></View>
-            </SafeAreaView>
-        </SafeAreaProvider>
+                <Footer />
+            </View>
+            <View style={ styles.blackView }></View>
+        </View>
     );
 };
 
