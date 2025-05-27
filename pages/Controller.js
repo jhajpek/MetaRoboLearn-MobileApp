@@ -9,6 +9,8 @@ import ControllerButton from "../components/ControllerButton";
 const { height: HEIGHT, width: WIDTH } = Dimensions.get("screen");
 const BUTTON_SIZE = 75;
 const GYROSCOPE_INTERVAL = 0.5;
+const TURN_THRESHOLD = 1.0;
+const STOP_THRESHOLD = 0.25;
 
 
 const Controller = () => {
@@ -116,7 +118,7 @@ const Controller = () => {
             clearTimeout(timeoutRef.current);
             setPause(false);
             setLastCommand("");
-        } else if(!pause) {
+        } else if(command !== "abort" && !pause) {
             setPause(true);
             setLastCommand(command);
             timeoutRef.current = setTimeout(() => {
@@ -138,12 +140,14 @@ const Controller = () => {
                    Math.abs(accelerometerOutput.z) >= 2) {
                     setAccelerometerOutput({ x: 0, y: 0, z: 0 });
                     setGyroscopeOn(false);
+                    setPause(false);
+                    setLastCommand("");
                     return;
                 }
 
-                if(Math.abs(x) > 0.75 || Math.abs(y) > 0.75) return;
+                if(Math.abs(x) > 0.5 || Math.abs(y) > 0.5) return;
 
-                if(z > 0.75 && lastCommand === "") {
+                if(z > TURN_THRESHOLD && lastCommand === "") {
                     setPause(true);
                     setLastCommand("turn_left");
                     timeoutRef.current = setTimeout(() => {
@@ -151,7 +155,7 @@ const Controller = () => {
                     }, GYROSCOPE_INTERVAL * 1000);
                 }
 
-                else if(z < -0.75 && lastCommand === "") {
+                else if(z < -TURN_THRESHOLD && lastCommand === "") {
                     setPause(true);
                     setLastCommand("turn_right");
                     timeoutRef.current = setTimeout(() => {
@@ -159,13 +163,20 @@ const Controller = () => {
                     }, GYROSCOPE_INTERVAL * 1000);
                 }
 
-                else if(z > 0.25 && lastCommand === "turn_right" ||
-                        z < -0.25 && lastCommand === "turn_left") {
+                else if(z > STOP_THRESHOLD && lastCommand === "turn_right" ||
+                        z < -STOP_THRESHOLD && lastCommand === "turn_left") {
+                    setPause(true);
+                    setLastCommand("");
+                    timeoutRef.current = setTimeout(() => {
+                        setPause(false);
+                    }, GYROSCOPE_INTERVAL * 1000);
+                }
+
+                else if(lastCommand !== "") {
                     setPause(true);
                     timeoutRef.current = setTimeout(() => {
-                        setLastCommand("");
                         setPause(false);
-                    }, GYROSCOPE_INTERVAL * 1000 * 2);
+                    }, GYROSCOPE_INTERVAL * 1000);
                 }
             });
         } else gyroscopeIncome?.remove();
