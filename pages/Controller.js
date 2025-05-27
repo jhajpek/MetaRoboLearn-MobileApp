@@ -12,18 +12,19 @@ const { height: HEIGHT, width: WIDTH } = Dimensions.get("screen");
 const url = Constants.expoConfig.extra.BACKEND_URL;
 const port = Constants.expoConfig.extra.BACKEND_PORT;
 const BUTTON_SIZE = 75;
-const GYROSCOPE_INTERVAL = 0.5;
+const GYROSCOPE_INTERVAL = 1.0;
+const TURN_THRESHOLD = 0.75;
+const STOP_THRESHOLD = 0.25;
 
 
 const Controller = () => {
     const [gyroscopeOn, setGyroscopeOn] = useState(false);
-    const [pause, setPause] = useState(false);
     const [lastCommand, setLastCommand] = useState("");
     const [accelerometerOutput, setAccelerometerOutput] = useState({ x: 0, y: 0, z: 0 });
     const [duration, setDuration] = useState(1.);
     const [speed, setSpeed] = useState(0.);
-    const [handSide, setHandSide] = useState(true);
     const timeoutRef = useRef(null);
+    const [handSide, setHandSide] = useState(true);
     const navigation = useNavigation();
     const insets = useSafeAreaInsets();
     const styles = StyleSheet.create({
@@ -116,15 +117,14 @@ const Controller = () => {
     });
 
     const execute = async (command, duration, gyro) => {
+        if(!gyro && gyroscopeOn && command.startsWith("turn")) return;
         await axios.post(`${ url }:${ port }/execute`, {
-            "code": `${ command }(${ speed }, ${ duration })`
+            "code": `${ command }(${ duration }, ${ speed })`
         }).then((res) => {
             if(res.status === 200) {
                 setLastCommand(command);
-                setPause(true);
                 timeoutRef.current = setTimeout(() => {
                     if(!gyro) setLastCommand("");
-                    setPause(false);
                 }, duration * 1000);
             }
         }).catch(err => console.log(err));
@@ -135,31 +135,29 @@ const Controller = () => {
             .then(() => {
                 clearTimeout(timeoutRef.current);
                 setLastCommand("");
-                setPause(false);
             }).catch(err => console.log(err));
     };
 
     useEffect(() => {
-        Gyroscope.setUpdateInterval(GYROSCOPE_INTERVAL);
+        Gyroscope.setUpdateInterval(GYROSCOPE_INTERVAL * 1000);
         let gyroscopeIncome;
         if(gyroscopeOn) {
             gyroscopeIncome = Gyroscope.addListener(async ({x, y, z}) => {
-                if (pause) return;
-
-                if (Math.abs(accelerometerOutput.x) >= 2 ||
+                if(Math.abs(accelerometerOutput.x) >= 2 ||
                     Math.abs(accelerometerOutput.y) >= 2 ||
                     Math.abs(accelerometerOutput.z) >= 2) {
                     setAccelerometerOutput({x: 0, y: 0, z: 0});
                     setGyroscopeOn(false);
+                    setLastCommand("");
                     return;
                 }
 
                 if(Math.abs(x) > 0.75 || Math.abs(y) > 0.75) return;
 
-                if(z > 0.75 && lastCommand === "") await execute("turn_left", GYROSCOPE_INTERVAL, true);
-                else if(z < -0.75 && lastCommand === "") await execute("turn_right", GYROSCOPE_INTERVAL, true);
-                else if(z > 0.25 && lastCommand === "turn_right" || z < -0.25 && lastCommand === "turn_left") await abort();
-                else if(lastCommand !== "") await execute(lastCommand, GYROSCOPE_INTERVAL, true);
+                if(z > TURN_THRESHOLD && lastCommand === "") await execute("turn_left", GYROSCOPE_INTERVAL, true);
+                else if(z < -TURN_THRESHOLD && lastCommand === "") await execute("turn_right", GYROSCOPE_INTERVAL, true);
+                else if(z > STOP_THRESHOLD && lastCommand === "turn_right" || z < -STOP_THRESHOLD && lastCommand === "turn_left") await abort();
+                else if(lastCommand === "turn_left" || lastCommand === "turn_right") await execute(lastCommand, GYROSCOPE_INTERVAL, true);
             });
         } else gyroscopeIncome?.remove();
 
@@ -174,7 +172,7 @@ const Controller = () => {
         } else accelerometerIncome?.remove();
 
         return () => accelerometerIncome?.remove();
-    }, [gyroscopeOn, pause]);
+    }, [gyroscopeOn, lastCommand]);
 
     const renderSettings = () => (
         <View style={ styles.settings }>
@@ -235,21 +233,21 @@ const Controller = () => {
 
     const renderController = () => (
         <View style={ styles.controller }>
-            <TouchableOpacity onPress={ () => execute("forward", duration) }>
+            <TouchableOpacity onPress={ () => { if(lastCommand === "") execute("forward", duration).then(() => {}); } }>
                 <ControllerButton direction={ "forward" } buttonSize={ BUTTON_SIZE } play={ "#FED857" } bg={ "#33D3D6" } />
             </TouchableOpacity>
             <View style={ styles.controllerMidSection }>
-                <TouchableOpacity onPress={ () => execute("turn_left", duration) }>
+                <TouchableOpacity onPress={ () => { if(lastCommand === "") execute("turn_left", duration).then(() => {}); } }>
                     <ControllerButton direction={ "turn_left" } buttonSize={ BUTTON_SIZE } play={ "#33D3D6" } bg={ "#FED857" } />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={ () => { if(!pause) abort().then(() => {}); } }>
+                <TouchableOpacity onPress={ () => { if(lastCommand !== "") abort().then(() => {}); } }>
                     <ControllerButton direction={ "abort" } buttonSize={ BUTTON_SIZE } play={ "#FE7569" } bg={ "#8AE6E8" } />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={ () => execute("turn_right", duration) }>
+                <TouchableOpacity onPress={ () => { if(lastCommand === "") execute("turn_right", duration).then(() => {}); } }>
                     <ControllerButton direction={ "turn_right" } buttonSize={ BUTTON_SIZE } play={ "#33D3D6" } bg={ "#FED857" } />
                 </TouchableOpacity>
             </View>
-            <TouchableOpacity onPress={ () => execute("back", duration) }>
+            <TouchableOpacity onPress={ () => { if(lastCommand === "") execute("back", duration).then(() => {}); } }>
                 <ControllerButton direction={ "back" } buttonSize={ BUTTON_SIZE } play={ "#FED857" } bg={ "#33D3D6" } />
             </TouchableOpacity>
         </View>
