@@ -1,4 +1,4 @@
-import { Animated, Dimensions, Easing, Image, StyleSheet, TouchableWithoutFeedback } from "react-native";
+import { Animated, Dimensions, Easing, Image, Pressable, StyleSheet } from "react-native";
 import { useRef } from "react";
 
 const HEIGHT = Dimensions.get("screen").height;
@@ -19,23 +19,21 @@ const JumpingRobot = () => {
                 toValue: -20,
                 duration: ANIMATION_DURATION * 1000,
                 easing: Easing.inOut(Easing.sin),
-                useNativeDriver: true,
             }),
             Animated.timing(translateY, {
                 toValue: 0,
                 duration: ANIMATION_DURATION * 1000,
                 easing: Easing.inOut(Easing.sin),
-                useNativeDriver: true,
             }),
         ]).start();
     };
 
     return (
-        <TouchableWithoutFeedback onPress={ jump }>
+        <Pressable onPress={ jump }>
             <Animated.View style={{ transform: [{ translateY: translateY }] }}>
                 <Image source={ require("../assets/robot.png") } style={ styles.image } />
             </Animated.View>
-        </TouchableWithoutFeedback>
+        </Pressable>
     );
 };
 

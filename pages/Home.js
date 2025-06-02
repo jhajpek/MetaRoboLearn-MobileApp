@@ -5,7 +5,9 @@ import Triangles from "../components/Triangles";
 import JumpingRobot from "../components/JumpingRobot";
 import Footer from "../components/Footer";
 
+
 const { height: HEIGHT, width: WIDTH } = Dimensions.get("screen");
+
 
 const Home = () => {
     const insets = useSafeAreaInsets()
