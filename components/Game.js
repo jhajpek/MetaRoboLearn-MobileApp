@@ -43,9 +43,11 @@ const styles = StyleSheet.create({
         height: "20%",
         fontSize: 36,
         color: "#FFF",
-        textShadowColor: "rgba(0, 0, 0, 0.8)",
-        textShadowOffset: { width: 1, height: 1 },
-        textShadowRadius: 2,
+        textShadow: {
+            color: "rgba(0, 0, 0, 0.8)",
+            offset: { width: 1, height: 1 },
+            radius: 2
+        },
         textAlign: "center",
         textAlignVertical: "center",
     },
@@ -75,9 +77,11 @@ const styles = StyleSheet.create({
         color: "#FFF",
         fontSize: 24,
         fontWeight: "600",
-        textShadowColor: "rgba(0, 0, 0, 0.8)",
-        textShadowOffset: { width: 1, height: 1 },
-        textShadowRadius: 2,
+        textShadow: {
+            color: "rgba(0, 0, 0, 0.8)",
+            offset: { width: 1, height: 1 },
+            radius: 2
+        },
         textAlign: "center",
         textAlignVertical: "center",
     },

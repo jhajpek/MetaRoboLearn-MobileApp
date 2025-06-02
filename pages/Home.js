@@ -5,6 +5,7 @@ import Triangles from "../components/Triangles";
 import JumpingRobot from "../components/JumpingRobot";
 import Footer from "../components/Footer";
 
+
 const { height: HEIGHT, width: WIDTH } = Dimensions.get("screen");
 
 const Home = () => {
@@ -42,9 +43,11 @@ const Home = () => {
             textAlign: "center",
             color: "#FFF",
             marginBottom: 20,
-            textShadowColor: "rgba(0, 0, 0, 0.8)",
-            textShadowOffset: { width: 2, height: 2 },
-            textShadowRadius: 4
+            textShadow: {
+                color: "rgba(0, 0, 0, 0.8)",
+                offset: { width: 2, height: 2 },
+                radius: 4
+            }
         },
     });
 
