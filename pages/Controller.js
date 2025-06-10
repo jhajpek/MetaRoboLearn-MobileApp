@@ -1,8 +1,19 @@
-import { View, Text, StyleSheet, Dimensions, Switch, TouchableOpacity } from "react-native";
+import {
+    View,
+    Text,
+    StyleSheet,
+    Dimensions,
+    Switch,
+    TouchableOpacity,
+    PanResponder,
+    Animated,
+    Alert, Image
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { useState, useEffect, useRef } from "react";
 import { Gyroscope, Accelerometer } from "expo-sensors";
+import { io } from "socket.io-client";
 import Constants from "expo-constants";
 import axios from "axios";
 import ControllerButton from "../components/ControllerButton";
@@ -12,9 +23,11 @@ const { height: HEIGHT, width: WIDTH } = Dimensions.get("screen");
 const url = Constants.expoConfig.extra.BACKEND_URL;
 const port = Constants.expoConfig.extra.BACKEND_PORT;
 const BUTTON_SIZE = 75;
-const GYROSCOPE_INTERVAL = 1.0;
-const TURN_THRESHOLD = 0.75;
+const GYROSCOPE_INTERVAL = 0.2;
+const TURN_THRESHOLD = 0.5;
 const STOP_THRESHOLD = 0.25;
+const CAMERA_WIDTH = 320;
+const CAMERA_HEIGHT = 240;
 
 
 const Controller = () => {
@@ -22,9 +35,41 @@ const Controller = () => {
     const [lastCommand, setLastCommand] = useState("");
     const [accelerometerOutput, setAccelerometerOutput] = useState({ x: 0, y: 0, z: 0 });
     const [duration, setDuration] = useState(1.);
-    const [speed, setSpeed] = useState(0.);
-    const timeoutRef = useRef(null);
+    const [speed, setSpeed] = useState(30.);
     const [handSide, setHandSide] = useState(true);
+    const [image, setImage] = useState("");
+    const [cameraOn, setCameraOn] = useState(false);
+    const [ignoreGyroInput, setIgnoreGyroInput] = useState(false);
+    const timeoutRef = useRef(null);
+    const panResponderRef = useRef(new Animated.ValueXY({ x: 0, y: HEIGHT - CAMERA_HEIGHT})).current;
+    const panResponder = useRef(
+        PanResponder.create({
+            onStartShouldSetPanResponder: () => true,
+
+            onPanResponderGrant: () => {
+                panResponderRef.setOffset({
+                    x: panResponderRef.x._value,
+                    y: panResponderRef.y._value,
+                });
+                panResponderRef.setValue({ x: 0, y: 0 });
+            },
+
+            onPanResponderMove: (gestureEvent, gestureState) => {
+                const newX = panResponderRef.x._offset + gestureState.dx;
+                const newY = panResponderRef.y._offset + gestureState.dy;
+
+                const clampedX = Math.max(0, Math.min(newX, WIDTH - CAMERA_WIDTH - 2 * insets.left));
+                const clampedY = Math.max(0, Math.min(newY, HEIGHT - CAMERA_HEIGHT));
+
+                panResponderRef.x.setValue(clampedX - panResponderRef.x._offset);
+                panResponderRef.y.setValue(clampedY - panResponderRef.y._offset);
+            },
+
+            onPanResponderRelease: () => {
+                panResponderRef.flattenOffset();
+            }
+        })
+    ).current;
     const navigation = useNavigation();
     const insets = useSafeAreaInsets();
     const styles = StyleSheet.create({
@@ -81,6 +126,12 @@ const Controller = () => {
             paddingHorizontal: 15,
             borderRadius: 10,
         },
+        cameraButton: {
+            backgroundColor: "#FED857",
+            paddingVertical: 10,
+            paddingHorizontal: 15,
+            borderRadius: 10,
+        },
         toggleButton: {
             backgroundColor: "#33D3D6",
             paddingVertical: 10,
@@ -114,34 +165,74 @@ const Controller = () => {
             fontWeight: "bold",
             textAlign: "center",
         },
+        cameraContainer: {
+            position: "absolute",
+            left: insets.left,
+            top: insets.top,
+            width: CAMERA_WIDTH,
+            height: CAMERA_HEIGHT,
+            display: "flex",
+            flexDirection: "column",
+            backgroundColor: "black",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 2,
+            borderRadius: 10,
+            borderWidth: 1,
+            borderColor: "#FFF",
+            transform: panResponderRef.getTranslateTransform(),
+        },
+        camera: {
+            width: CAMERA_WIDTH,
+            height: CAMERA_HEIGHT,
+            borderRadius: 10,
+        },
     });
 
+    useEffect(() => {
+        if (!cameraOn) return;
+
+        const socket = io(`${ url }:${ port }`);
+
+        socket.on("camera_frame", (data) => {
+            if(data?.image)
+                setImage(`data:image/jpeg;base64,${data.image}`);
+        });
+
+        return () => {
+            socket.disconnect();
+        }
+    }, [cameraOn]);
+
     const execute = async (command, duration, gyro) => {
-        if(!gyro && gyroscopeOn && command.startsWith("turn")) return;
+        if(!gyro) setIgnoreGyroInput(true);
         await axios.post(`${ url }:${ port }/execute`, {
             "code": `${ command }(${ duration }, ${ speed })`
-        }).then((res) => {
-            if(res.status === 200) {
-                setLastCommand(command);
-                timeoutRef.current = setTimeout(() => {
-                    if(!gyro) setLastCommand("");
-                }, duration * 1000);
-            }
-        }).catch(err => console.log(err));
+        }, { timeout: 1000 }).then(() => {
+            setLastCommand(command);
+            timeoutRef.current = setTimeout(() => {
+                if(!gyro) {
+                    setLastCommand("");
+                    setIgnoreGyroInput(false);
+                }
+            }, duration * 1000);
+        }).catch(() => {});
     };
 
     const abort = async () => {
-        await axios.post(`${ url }:${ port }/abort`, {})
+        setIgnoreGyroInput(true);
+        await axios.post(`${ url }:${ port }/abort`, {}, { timeout: 1000 })
             .then(() => {
-                clearTimeout(timeoutRef.current);
                 setLastCommand("");
-            }).catch(err => console.log(err));
+                setIgnoreGyroInput(false);
+                clearTimeout(timeoutRef.current);
+            }).catch(() => {});
     };
 
     useEffect(() => {
         Gyroscope.setUpdateInterval(GYROSCOPE_INTERVAL * 1000);
         let gyroscopeIncome;
-        if(gyroscopeOn) {
+        if(gyroscopeOn && !ignoreGyroInput) {
             gyroscopeIncome = Gyroscope.addListener(async ({x, y, z}) => {
                 if(Math.abs(accelerometerOutput.x) >= 2 ||
                     Math.abs(accelerometerOutput.y) >= 2 ||
@@ -165,6 +256,7 @@ const Controller = () => {
     }, [accelerometerOutput]);
 
     useEffect(() => {
+        Accelerometer.setUpdateInterval(GYROSCOPE_INTERVAL * 1000);
         let accelerometerIncome;
         if(gyroscopeOn) {
             accelerometerIncome = Accelerometer.addListener(
@@ -174,11 +266,23 @@ const Controller = () => {
         return () => accelerometerIncome?.remove();
     }, [gyroscopeOn, lastCommand]);
 
+    const cameraClick = () => {
+        if(!cameraOn) Alert.alert("KAMERA", "Upalili ste kameru, njen smještaj na ekranu, možete podesiti.", [ { text: "OK" } ])
+        setCameraOn(prev => !prev);
+    };
+
+    const fetchFail = () => {
+        Alert.alert("UPOZORENJE!", "Niste spojeni na mrežu robota ili robot nije upaljen.", [ { text: "OK" } ]);
+    };
+
     const renderSettings = () => (
         <View style={ styles.settings }>
             <View style={ styles.row }>
                 <TouchableOpacity style={ styles.backButton } onPress={ () => navigation.navigate("Games") }>
                     <Text style={ styles.backButtonText }>Izlaz</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={ styles.cameraButton } onPress={ () => cameraClick() }>
+                    <Text style={ styles.backButtonText }>Kamera</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={ styles.toggleButton }
                                   onPress={ () => setHandSide(prev => !prev) }>
@@ -204,7 +308,7 @@ const Controller = () => {
             <View style={ styles.row }>
                 <Text style={ styles.label }>Brzina kretanja:</Text>
                 <TouchableOpacity style={ styles.adjustValuesButton }
-                                  onPress={ () => setSpeed(prev => Math.max(0, prev - 10)) }>
+                                  onPress={ () => setSpeed(prev => Math.max(30, prev - 10)) }>
                     <View style={ styles.adjustValuesButton }>
                         <Text style={ styles.adjustValuesText }>-</Text>
                     </View>
@@ -222,7 +326,10 @@ const Controller = () => {
                 <Switch
                     trackColor={{ false: "#D7D7D7", true: "#33D3D6" }}
                     thumbColor={ gyroscopeOn ? "#00B6BA" : "#FFF" }
-                    onValueChange={ () => setGyroscopeOn(prev => !prev) }
+                    onValueChange={ () => {
+                        setGyroscopeOn(prev => !prev);
+                        if(lastCommand !== "") abort().then(() => {});
+                    }}
                     value={ gyroscopeOn }
                     style={{ alignSelf: "center" }}
                 />
@@ -233,21 +340,21 @@ const Controller = () => {
 
     const renderController = () => (
         <View style={ styles.controller }>
-            <TouchableOpacity onPress={ () => { if(lastCommand === "") execute("forward", duration).then(() => {}); } }>
+            <TouchableOpacity onPress={ () => { if(lastCommand === "") execute("forward", duration, false).then(() => {}); } }>
                 <ControllerButton direction={ "forward" } buttonSize={ BUTTON_SIZE } play={ "#FED857" } bg={ "#33D3D6" } />
             </TouchableOpacity>
             <View style={ styles.controllerMidSection }>
-                <TouchableOpacity onPress={ () => { if(lastCommand === "") execute("turn_left", duration).then(() => {}); } }>
+                <TouchableOpacity onPress={ () => { if(lastCommand === "") execute("turn_left", duration, false).then(() => {}); } }>
                     <ControllerButton direction={ "turn_left" } buttonSize={ BUTTON_SIZE } play={ "#33D3D6" } bg={ "#FED857" } />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={ () => { if(lastCommand !== "") abort().then(() => {}); } }>
                     <ControllerButton direction={ "abort" } buttonSize={ BUTTON_SIZE } play={ "#FE7569" } bg={ "#8AE6E8" } />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={ () => { if(lastCommand === "") execute("turn_right", duration).then(() => {}); } }>
+                <TouchableOpacity onPress={ () => { if(lastCommand === "") execute("turn_right", duration, false).then(() => {}); } }>
                     <ControllerButton direction={ "turn_right" } buttonSize={ BUTTON_SIZE } play={ "#33D3D6" } bg={ "#FED857" } />
                 </TouchableOpacity>
             </View>
-            <TouchableOpacity onPress={ () => { if(lastCommand === "") execute("back", duration).then(() => {}); } }>
+            <TouchableOpacity onPress={ () => { if(lastCommand === "") execute("back", duration, false).then(() => {}); } }>
                 <ControllerButton direction={ "back" } buttonSize={ BUTTON_SIZE } play={ "#FED857" } bg={ "#33D3D6" } />
             </TouchableOpacity>
         </View>
@@ -257,16 +364,24 @@ const Controller = () => {
     return (
         <View style={ styles.container }>
             <View style={ styles.blackView }></View>
-            {
-                handSide ?
-                    <>
-                        { renderSettings() }
-                        { renderController() }
-                    </> :
-                    <>
-                        { renderController() }
-                        { renderSettings() }
-                    </>
+            { cameraOn && <Animated.View style={ styles.cameraContainer } { ...panResponder.panHandlers }>
+                <Image
+                    source={{ uri: image }}
+                    alt={ "Učitavanje kamere..." }
+                    style={ styles.camera }
+                    resizeMode="cover"
+                />
+            </Animated.View>
+            }
+            { handSide ?
+                <>
+                    { renderSettings() }
+                    { renderController() }
+                </> :
+                <>
+                    { renderController() }
+                    { renderSettings() }
+                </>
             }
             <View style={ styles.blackView }></View>
         </View>

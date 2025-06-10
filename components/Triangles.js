@@ -31,11 +31,13 @@ const Animation = ({ children, startingRight }) => {
                     toValue: startingRight ? WIDTH * 0.75: -WIDTH * 0.75,
                     duration: ANIMATION_DURATION * 1000,
                     easing: Easing.inOut(Easing.sin),
+                    useNativeDriver: false,
                 }),
                 Animated.timing(translateX, {
                     toValue: 0,
                     duration: ANIMATION_DURATION * 1000,
                     easing: Easing.inOut(Easing.sin),
+                    useNativeDriver: false,
                 }),
             ])
         ).start();

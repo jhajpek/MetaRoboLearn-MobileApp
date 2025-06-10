@@ -19,11 +19,13 @@ const JumpingRobot = () => {
                 toValue: -20,
                 duration: ANIMATION_DURATION * 1000,
                 easing: Easing.inOut(Easing.sin),
+                useNativeDriver: false,
             }),
             Animated.timing(translateY, {
                 toValue: 0,
                 duration: ANIMATION_DURATION * 1000,
                 easing: Easing.inOut(Easing.sin),
+                useNativeDriver: false,
             }),
         ]).start();
     };
