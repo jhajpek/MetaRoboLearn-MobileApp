@@ -12,7 +12,7 @@ export default {
         splash: {
             image: "./assets/logo-black.png",
             resizeMode: "contain",
-            backgroundColor: "#000",
+            backgroundColor: "#FFF",
         },
         android: {
             package: "com.jhajpek.MetaRoboLearn",

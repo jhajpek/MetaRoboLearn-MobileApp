@@ -1,18 +1,16 @@
 import {
-    View,
-    Text,
+    View, Text,
     StyleSheet,
     Dimensions,
-    Switch,
+    Switch, Animated,
     TouchableOpacity,
     PanResponder,
-    Animated,
-    Alert, Image
+    Alert, Image, TextInput
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { useState, useEffect, useRef } from "react";
-import { Gyroscope, Accelerometer } from "expo-sensors";
+import { DeviceMotion, Accelerometer } from "expo-sensors";
 import { io } from "socket.io-client";
 import Constants from "expo-constants";
 import axios from "axios";
@@ -20,14 +18,11 @@ import ControllerButton from "../components/ControllerButton";
 
 
 const { height: HEIGHT, width: WIDTH } = Dimensions.get("screen");
-const url = Constants.expoConfig.extra.BACKEND_URL;
-const port = Constants.expoConfig.extra.BACKEND_PORT;
 const BUTTON_SIZE = 75;
-const GYROSCOPE_INTERVAL = 0.2;
-const TURN_THRESHOLD = 0.5;
-const STOP_THRESHOLD = 0.25;
 const CAMERA_WIDTH = 320;
 const CAMERA_HEIGHT = 240;
+const TURN_THRESHOLD = 0.2; // angle unit
+const TURN_INTERVAL = 0.2; // seconds
 
 
 const Controller = () => {
@@ -37,10 +32,18 @@ const Controller = () => {
     const [duration, setDuration] = useState(1.);
     const [speed, setSpeed] = useState(30.);
     const [handSide, setHandSide] = useState(true);
-    const [image, setImage] = useState("");
+    const [angle, setAngle] = useState(0);
+    const [fromButton, setFromButton] = useState(false);
     const [cameraOn, setCameraOn] = useState(false);
-    const [ignoreGyroInput, setIgnoreGyroInput] = useState(false);
+    const [image, setImage] = useState("");
+    const [url, setUrl] = useState(Constants.expoConfig.extra.BACKEND_URL);
+    const [port, setPort] = useState(Constants.expoConfig.extra.BACKEND_PORT);
+    const [inputPopupOn, setInputPopupOn] = useState(false);
+    const [inputValue1, setInputValue1] = useState(Constants.expoConfig.extra.BACKEND_URL);
+    const [inputValue2, setInputValue2] = useState(Constants.expoConfig.extra.BACKEND_PORT);
     const timeoutRef = useRef(null);
+    const navigation = useNavigation();
+    const insets = useSafeAreaInsets();
     const panResponderRef = useRef(new Animated.ValueXY({ x: 0, y: HEIGHT - CAMERA_HEIGHT})).current;
     const panResponder = useRef(
         PanResponder.create({
@@ -70,8 +73,6 @@ const Controller = () => {
             }
         })
     ).current;
-    const navigation = useNavigation();
-    const insets = useSafeAreaInsets();
     const styles = StyleSheet.create({
         container: {
             display: "flex",
@@ -187,10 +188,56 @@ const Controller = () => {
             height: CAMERA_HEIGHT,
             borderRadius: 10,
         },
+        inputContainer: {
+            position: "absolute",
+            top: 0,
+            left: insets.left,
+            width: WIDTH - 2 * insets.left,
+            height: HEIGHT,
+            zIndex: 3,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "#CCC",
+        },
+        input: {
+            height: 40,
+            width: "60%",
+            borderColor: "#CCC",
+            borderWidth: 1,
+            borderRadius: 5,
+            paddingHorizontal: 10,
+            marginBottom: 10,
+            backgroundColor: "#FFF",
+        },
+        inputValidation: {
+            display: "flex",
+            flexDirection: "row",
+            justifyContent: "center",
+            gap: "15%",
+        },
+        confirmButton: {
+            backgroundColor: "#87FD5F",
+            padding: 10,
+            borderRadius: 5,
+            width: "15%",
+        },
+        cancelButton: {
+            backgroundColor: "#FE7569",
+            padding: 10,
+            borderRadius: 5,
+            width: "15%",
+        },
+        textColour: {
+            color: "#FFF",
+            textAlign: "center",
+            fontWeight: "bold",
+        },
     });
 
     useEffect(() => {
-        if (!cameraOn) return;
+        if(!cameraOn) return;
 
         const socket = io(`${ url }:${ port }`);
 
@@ -205,58 +252,59 @@ const Controller = () => {
     }, [cameraOn]);
 
     const execute = async (command, duration, gyro) => {
-        if(!gyro) setIgnoreGyroInput(true);
         await axios.post(`${ url }:${ port }/execute`, {
             "code": `${ command }(${ duration }, ${ speed })`
         }, { timeout: 1000 }).then(() => {
+            if(!gyro) setFromButton(true);
             setLastCommand(command);
             timeoutRef.current = setTimeout(() => {
                 if(!gyro) {
                     setLastCommand("");
-                    setIgnoreGyroInput(false);
+                    setFromButton(false);
                 }
             }, duration * 1000);
         }).catch(() => {});
     };
 
     const abort = async () => {
-        setIgnoreGyroInput(true);
         await axios.post(`${ url }:${ port }/abort`, {}, { timeout: 1000 })
             .then(() => {
                 setLastCommand("");
-                setIgnoreGyroInput(false);
+                setFromButton(false);
                 clearTimeout(timeoutRef.current);
             }).catch(() => {});
     };
 
     useEffect(() => {
-        Gyroscope.setUpdateInterval(GYROSCOPE_INTERVAL * 1000);
-        let gyroscopeIncome;
-        if(gyroscopeOn && !ignoreGyroInput) {
-            gyroscopeIncome = Gyroscope.addListener(async ({x, y, z}) => {
+        DeviceMotion.setUpdateInterval(TURN_INTERVAL * 1000);
+        let motionIncome;
+        if(gyroscopeOn) {
+            motionIncome = DeviceMotion.addListener(async ({ rotation }) => {
                 if(Math.abs(accelerometerOutput.x) >= 2 ||
                     Math.abs(accelerometerOutput.y) >= 2 ||
                     Math.abs(accelerometerOutput.z) >= 2) {
-                    setAccelerometerOutput({x: 0, y: 0, z: 0});
+                    setAccelerometerOutput({ x: 0, y: 0, z: 0 });
                     setGyroscopeOn(false);
                     setLastCommand("");
                     return;
                 }
 
-                if(Math.abs(x) > 0.75 || Math.abs(y) > 0.75) return;
+                if(!rotation) return;
 
-                if(z > TURN_THRESHOLD && lastCommand === "") await execute("turn_left", GYROSCOPE_INTERVAL, true);
-                else if(z < -TURN_THRESHOLD && lastCommand === "") await execute("turn_right", GYROSCOPE_INTERVAL, true);
-                else if(z > STOP_THRESHOLD && lastCommand === "turn_right" || z < -STOP_THRESHOLD && lastCommand === "turn_left") await abort();
-                else if(lastCommand === "turn_left" || lastCommand === "turn_right") await execute(lastCommand, GYROSCOPE_INTERVAL, true);
+                setAngle(rotation.beta ?? 0);
+
+                if(angle > TURN_THRESHOLD && lastCommand === "") await execute("turn_right", TURN_INTERVAL, true);
+                else if(angle < -TURN_THRESHOLD && lastCommand === "") await execute("turn_left", TURN_INTERVAL, true);
+                else if(angle >= -TURN_THRESHOLD && angle <= -TURN_THRESHOLD && lastCommand !== "" && !fromButton) await abort();
+                else if(lastCommand.startsWith("turn") && !fromButton) await execute(lastCommand, TURN_INTERVAL, true);
             });
-        } else gyroscopeIncome?.remove();
+        } else motionIncome?.remove();
 
-        return () => gyroscopeIncome?.remove();
+        return () => motionIncome?.remove();
     }, [accelerometerOutput]);
 
     useEffect(() => {
-        Accelerometer.setUpdateInterval(GYROSCOPE_INTERVAL * 1000);
+        Accelerometer.setUpdateInterval(TURN_INTERVAL * 1000);
         let accelerometerIncome;
         if(gyroscopeOn) {
             accelerometerIncome = Accelerometer.addListener(
@@ -275,6 +323,18 @@ const Controller = () => {
         Alert.alert("UPOZORENJE!", "Niste spojeni na mrežu robota ili robot nije upaljen.", [ { text: "OK" } ]);
     };
 
+    const handleConfirm = () => {
+        setUrl(inputValue1);
+        setPort(inputValue2);
+        setInputPopupOn(false);
+    };
+
+    const handleCancel = () => {
+        setInputValue1(url);
+        setInputValue2(port);
+        setInputPopupOn(false);
+    };
+
     const renderSettings = () => (
         <View style={ styles.settings }>
             <View style={ styles.row }>
@@ -287,6 +347,9 @@ const Controller = () => {
                 <TouchableOpacity style={ styles.toggleButton }
                                   onPress={ () => setHandSide(prev => !prev) }>
                     <Text style={ styles.backButtonText }>{ handSide ? "Dešnjak" : "Lijevak" }</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={ styles.toggleButton } onPress={ () => setInputPopupOn(prev => !prev) }>
+                    <Text style={ styles.backButtonText }>SERVER</Text>
                 </TouchableOpacity>
             </View>
             <View style={ styles.row }>
@@ -372,6 +435,20 @@ const Controller = () => {
                     resizeMode="cover"
                 />
             </Animated.View>
+            }
+            { inputPopupOn &&
+                <View style={ styles.inputContainer }>
+                    <TextInput style={ styles.input } value={ inputValue1 } onChangeText={ setInputValue1 } />
+                    <TextInput style={ styles.input } value={ inputValue2 } onChangeText={ setInputValue2 } />
+                    <View style={ styles.inputValidation }>
+                        <TouchableOpacity style={ styles.confirmButton } onPress={ handleConfirm }>
+                            <Text style={ styles.textColour }>Izmijeni</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={ styles.cancelButton } onPress={ handleCancel }>
+                            <Text style={ styles.textColour }>Odustani</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
             }
             { handSide ?
                 <>
