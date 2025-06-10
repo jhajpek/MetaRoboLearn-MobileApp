@@ -2,15 +2,13 @@ import { View, Text, StyleSheet, Dimensions, Switch, TouchableOpacity } from "re
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { useState, useEffect, useRef } from "react";
-import { Gyroscope, Accelerometer } from "expo-sensors";
+import { DeviceMotion, Accelerometer } from "expo-sensors";
 import ControllerButton from "../components/ControllerButton";
 
 
 const { height: HEIGHT, width: WIDTH } = Dimensions.get("screen");
 const BUTTON_SIZE = 75;
-const GYROSCOPE_INTERVAL = 0.5;
-const TURN_THRESHOLD = 1.0;
-const STOP_THRESHOLD = 0.25;
+const TURN_THRESHOLD = 0.2;
 
 
 const Controller = () => {
@@ -21,6 +19,7 @@ const Controller = () => {
     const [duration, setDuration] = useState(1.);
     const [speed, setSpeed] = useState(0.);
     const [handSide, setHandSide] = useState(true);
+    const [angle, setAngle] = useState(0);
     const timeoutRef = useRef(null);
     const navigation = useNavigation();
     const insets = useSafeAreaInsets();
@@ -114,11 +113,11 @@ const Controller = () => {
     });
 
     const executeCommand = async (command) => {
-        if(command === "abort" && pause) {
+        if(command === "abort" && lastCommand !== "") {
             clearTimeout(timeoutRef.current);
             setPause(false);
             setLastCommand("");
-        } else if(command !== "abort" && !pause) {
+        } else if(command !== "abort" && lastCommand === "") {
             setPause(true);
             setLastCommand(command);
             timeoutRef.current = setTimeout(() => {
@@ -129,10 +128,11 @@ const Controller = () => {
     };
 
     useEffect(() => {
-        Gyroscope.setUpdateInterval(GYROSCOPE_INTERVAL);
-        let gyroscopeIncome;
+        const GYROSCOPE_INTERVAL = 200;
+        DeviceMotion.setUpdateInterval(GYROSCOPE_INTERVAL);
+        let motionIncome
         if(gyroscopeOn) {
-            gyroscopeIncome = Gyroscope.addListener(({ x, y, z }) => {
+            motionIncome = DeviceMotion.addListener(({ rotation }) => {
                 if(pause) return;
 
                 if(Math.abs(accelerometerOutput.x) >= 2 ||
@@ -145,43 +145,39 @@ const Controller = () => {
                     return;
                 }
 
-                if(Math.abs(x) > 0.5 || Math.abs(y) > 0.5) return;
+                if(!rotation) return;
 
-                if(z > TURN_THRESHOLD && lastCommand === "") {
-                    setPause(true);
-                    setLastCommand("turn_left");
-                    timeoutRef.current = setTimeout(() => {
-                        setPause(false);
-                    }, GYROSCOPE_INTERVAL * 1000);
-                }
+                setAngle(rotation.beta ?? 0);
 
-                else if(z < -TURN_THRESHOLD && lastCommand === "") {
+                if(angle > TURN_THRESHOLD && lastCommand === "") {
                     setPause(true);
                     setLastCommand("turn_right");
                     timeoutRef.current = setTimeout(() => {
                         setPause(false);
-                    }, GYROSCOPE_INTERVAL * 1000);
+                    }, GYROSCOPE_INTERVAL);
                 }
 
-                else if(z > STOP_THRESHOLD && lastCommand === "turn_right" ||
-                        z < -STOP_THRESHOLD && lastCommand === "turn_left") {
+                else if(angle < -TURN_THRESHOLD && lastCommand === "") {
                     setPause(true);
-                    setLastCommand("");
+                    setLastCommand("turn_left");
                     timeoutRef.current = setTimeout(() => {
                         setPause(false);
-                    }, GYROSCOPE_INTERVAL * 1000);
+                    }, GYROSCOPE_INTERVAL);
                 }
+
+                else if(angle > -TURN_THRESHOLD && angle < TURN_THRESHOLD)
+                    setLastCommand("");
 
                 else if(lastCommand !== "") {
                     setPause(true);
                     timeoutRef.current = setTimeout(() => {
                         setPause(false);
-                    }, GYROSCOPE_INTERVAL * 1000);
+                    }, GYROSCOPE_INTERVAL);
                 }
             });
-        } else gyroscopeIncome?.remove();
+        }
 
-        return () => gyroscopeIncome?.remove();
+        return () => motionIncome?.remove();
     }, [accelerometerOutput]);
 
     useEffect(() => {
