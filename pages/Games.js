@@ -5,12 +5,13 @@ import Triangles from "../components/Triangles";
 import Game from "../components/Game";
 import Footer from "../components/Footer";
 
+
 const { height: HEIGHT, width: WIDTH } = Dimensions.get("screen");
 const GAMES = [
-    { id: 1, name: "Slobodna vožnja", description: "Pruža kontrolu nad robotom u Vašem i robotovom okruženju!" },
-    { id: 2, name: "Križić - Kružić", description: "Zaigrajte igricu koju svi volimo, ali bez olovke i papira! Na kvadratić gdje želite staviti svoj znak dovezite robota te stisnite OK!" },
-    { id: 3, name: "Igra s kamerom", description: "Nešto što se doda kad dođe kamera." },
+    { id: 1, name: "Slobodna vožnja", description: "Ova igra pruža kontrolu nad robotom u Vašem okruženju. Moguće je upravljati robotom tipkama te kontrolirati njegovo skretanje žiroskopom. Uz to, omogućen je prijenos uživo s kamere robota." },
+    { id: 2, name: "Prepoznavanje objekata", description: "Osim karakteristika poput upravljanja robotom i prijenosa uživo s kamere robota koje pruža igra Slobodna vožnja, u ovoj igri možete poslati robotu zahtjev da pokuša odgovoriti što se točno nalazi ispred njega." },
 ];
+
 
 const Games = () => {
     const insets = useSafeAreaInsets();
@@ -64,7 +65,7 @@ const Games = () => {
                                   <Game name={ item.name } description={ item.description } />
                               )} />
                 </View>
-                <Footer forLogin={ false } />
+                <Footer />
             </View>
             <View style={ styles.blackView }></View>
         </View>

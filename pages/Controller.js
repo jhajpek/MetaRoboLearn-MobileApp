@@ -21,8 +21,8 @@ const { height: HEIGHT, width: WIDTH } = Dimensions.get("screen");
 const BUTTON_SIZE = 75;
 const CAMERA_WIDTH = 320;
 const CAMERA_HEIGHT = 240;
-const TURN_THRESHOLD = 0.2; // angle unit
-const TURN_INTERVAL = 0.2; // seconds
+const TURN_THRESHOLD = 0.2;
+const TURN_INTERVAL = 0.5;
 
 
 const Controller = () => {
@@ -122,18 +122,30 @@ const Controller = () => {
             alignItems: "center",
         },
         backButton: {
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: 50,
             backgroundColor: "#FE7569",
             paddingVertical: 10,
             paddingHorizontal: 15,
             borderRadius: 10,
         },
         cameraButton: {
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: 50,
             backgroundColor: "#FED857",
             paddingVertical: 10,
             paddingHorizontal: 15,
             borderRadius: 10,
         },
         toggleButton: {
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: 50,
             backgroundColor: "#33D3D6",
             paddingVertical: 10,
             paddingHorizontal: 15,
@@ -234,6 +246,10 @@ const Controller = () => {
             textAlign: "center",
             fontWeight: "bold",
         },
+        image: {
+            width: 44,
+            height: 35,
+        },
     });
 
     useEffect(() => {
@@ -295,7 +311,7 @@ const Controller = () => {
 
                 if(angle > TURN_THRESHOLD && lastCommand === "") await execute("turn_right", TURN_INTERVAL, true);
                 else if(angle < -TURN_THRESHOLD && lastCommand === "") await execute("turn_left", TURN_INTERVAL, true);
-                else if(angle >= -TURN_THRESHOLD && angle <= -TURN_THRESHOLD && lastCommand !== "" && !fromButton) await abort();
+                else if(angle >= -TURN_THRESHOLD && angle <= TURN_THRESHOLD && lastCommand !== "" && !fromButton) await abort();
                 else if(lastCommand.startsWith("turn") && !fromButton) await execute(lastCommand, TURN_INTERVAL, true);
             });
         } else motionIncome?.remove();
@@ -315,12 +331,12 @@ const Controller = () => {
     }, [gyroscopeOn, lastCommand]);
 
     const cameraClick = () => {
-        if(!cameraOn) Alert.alert("KAMERA", "Upalili ste kameru, njen smještaj na ekranu, možete podesiti.", [ { text: "OK" } ])
+        if(!cameraOn) Alert.alert("UPALJENA KAMERA", "Prozor u kojem se prikazuje prijenos s kamere možete podesiti njegovim povlačenjem na drugi kraj ekrana.", [ { text: "Zatvori" } ])
         setCameraOn(prev => !prev);
     };
 
     const fetchFail = () => {
-        Alert.alert("UPOZORENJE!", "Niste spojeni na mrežu robota ili robot nije upaljen.", [ { text: "OK" } ]);
+        Alert.alert("UPOZORENJE!", "Niste spojeni na istu mrežu kao i robot ili robot nije upaljen.", [ { text: "Zatvori" } ]);
     };
 
     const handleConfirm = () => {
@@ -339,13 +355,12 @@ const Controller = () => {
         <View style={ styles.settings }>
             <View style={ styles.row }>
                 <TouchableOpacity style={ styles.backButton } onPress={ () => navigation.navigate("Games") }>
-                    <Text style={ styles.backButtonText }>Izlaz</Text>
+                    <Image source={ require("../assets/exit.png") } style={ styles.image } />
                 </TouchableOpacity>
                 <TouchableOpacity style={ styles.cameraButton } onPress={ () => cameraClick() }>
-                    <Text style={ styles.backButtonText }>Kamera</Text>
+                    <Image source={ require("../assets/camera.png") } style={ styles.image } />
                 </TouchableOpacity>
-                <TouchableOpacity style={ styles.toggleButton }
-                                  onPress={ () => setHandSide(prev => !prev) }>
+                <TouchableOpacity style={ styles.toggleButton } onPress={ () => setHandSide(prev => !prev) }>
                     <Text style={ styles.backButtonText }>{ handSide ? "Dešnjak" : "Lijevak" }</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={ styles.toggleButton } onPress={ () => setInputPopupOn(prev => !prev) }>
@@ -423,6 +438,15 @@ const Controller = () => {
         </View>
     );
 
+    /*
+    { image != "" ?
+        <Image
+            source={{ uri: image }}
+            style={ styles.camera }
+            resizeMode="cover"
+        /> : <Text>Učitavanje kamere...</Text>
+    }
+     */
 
     return (
         <View style={ styles.container }>

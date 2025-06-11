@@ -58,6 +58,15 @@ const styles = StyleSheet.create({
         textAlign: "center",
         textAlignVertical: "center",
     },
+    descriptionText: {
+        color: "#FFF",
+        fontSize: 16,
+        textAlign: "center",
+        textAlignVertical: "center",
+        textShadowColor: "rgba(0, 0, 0, 0.8)",
+        textShadowOffset: { width: 1, height: 1 },
+        textShadowRadius: 2,
+    },
 });
 
 const Game = ({ name, description }) => {
@@ -70,7 +79,7 @@ const Game = ({ name, description }) => {
             <View style={ styles.hr } />
 
             <View style={ styles.descriptionAndPlay }>
-                <Text>{ description }</Text>
+                <Text style={ styles.descriptionText }>{ description }</Text>
 
                 <TouchableOpacity
                     style={ styles.button }

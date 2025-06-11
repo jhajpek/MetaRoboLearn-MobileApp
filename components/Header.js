@@ -1,13 +1,14 @@
 import { View, Text, Image, StyleSheet, Alert, TouchableOpacity, Dimensions } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
-const ALERT_TITLE = "O nama";
-const ALERT_MESSAGE = "ZPR projekt u sklopu završnih radova";
-const ALERT_CLOSE_TEXT = "Zatvori";
+
 const HEIGHT = Dimensions.get("screen").height * 0.17;
 
-const Header = ({ forLogin }) => {
 
+const Header = ({ forLogin }) => {
+    const ALERT_TITLE = forLogin ? "Dobrodošli" : "Odabir igre";
+    const ALERT_MESSAGE = forLogin ? "Da biste odabrali koju igru želite igrati, morate stisnuti gumb Prijava." : "Sretno s odabirom igre te upravljanjem robota!";
+    const ALERT_CLOSE_TEXT = "Zatvori";
     const navigation = useNavigation();
     const styles = StyleSheet.create({
         container: {

@@ -1,6 +1,7 @@
 import { Animated, Dimensions, Easing, Image, Pressable, StyleSheet } from "react-native";
 import { useRef } from "react";
 
+
 const HEIGHT = Dimensions.get("screen").height;
 const ANIMATION_DURATION = 0.5;
 const styles = StyleSheet.create({

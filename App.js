@@ -24,7 +24,7 @@ export default function App() {
             }
         };
 
-        hideNavigationBar().then().catch(console.error);
+        hideNavigationBar().then().catch();
     }, []);
 
     return (
