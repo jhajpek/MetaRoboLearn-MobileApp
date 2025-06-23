@@ -22,7 +22,7 @@ const BUTTON_SIZE = 75;
 const CAMERA_WIDTH = 320;
 const CAMERA_HEIGHT = 240;
 const TURN_THRESHOLD = 0.2;
-const TURN_INTERVAL = 0.5;
+const TURN_INTERVAL = 0.2;
 
 
 const Controller = () => {
@@ -186,7 +186,7 @@ const Controller = () => {
             height: CAMERA_HEIGHT,
             display: "flex",
             flexDirection: "column",
-            backgroundColor: "black",
+            backgroundColor: "#000",
             justifyContent: "center",
             alignItems: "center",
             zIndex: 2,
@@ -258,14 +258,16 @@ const Controller = () => {
         const socket = io(`${ url }:${ port }`);
 
         socket.on("camera_frame", (data) => {
-            if(data?.image)
-                setImage(`data:image/jpeg;base64,${data.image}`);
+            if(data?.image) {
+                setImage(data.image);
+                //setImage(`data:image/jpeg;base64,${data.image}`);
+            }
         });
 
         return () => {
             socket.disconnect();
         }
-    }, [cameraOn]);
+    }, [cameraOn, image]);
 
     const execute = async (command, duration, gyro) => {
         await axios.post(`${ url }:${ port }/execute`, {
@@ -279,7 +281,7 @@ const Controller = () => {
                     setFromButton(false);
                 }
             }, duration * 1000);
-        }).catch(() => {});
+        }).catch(() => fetchFail());
     };
 
     const abort = async () => {
@@ -288,7 +290,7 @@ const Controller = () => {
                 setLastCommand("");
                 setFromButton(false);
                 clearTimeout(timeoutRef.current);
-            }).catch(() => {});
+            }).catch(() => fetchFail());
     };
 
     useEffect(() => {
@@ -336,7 +338,7 @@ const Controller = () => {
     };
 
     const fetchFail = () => {
-        Alert.alert("UPOZORENJE!", "Niste spojeni na istu mrežu kao i robot ili robot nije upaljen.", [ { text: "Zatvori" } ]);
+        Alert.alert("UPOZORENJE", "Niste spojeni na istu mrežu kao i robot ili robot nije upaljen.", [ { text: "Zatvori" } ]);
     };
 
     const handleConfirm = () => {
@@ -361,7 +363,7 @@ const Controller = () => {
                     <Image source={ require("../assets/camera.png") } style={ styles.image } />
                 </TouchableOpacity>
                 <TouchableOpacity style={ styles.toggleButton } onPress={ () => setHandSide(prev => !prev) }>
-                    <Text style={ styles.backButtonText }>{ handSide ? "Dešnjak" : "Lijevak" }</Text>
+                    <Text style={ styles.backButtonText }>{ handSide ? "Dešnjak" : "Ljevak" }</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={ styles.toggleButton } onPress={ () => setInputPopupOn(prev => !prev) }>
                     <Text style={ styles.backButtonText }>SERVER</Text>
@@ -412,7 +414,6 @@ const Controller = () => {
                     style={{ alignSelf: "center" }}
                 />
             </View>
-            <Text style={{ alignSelf: "center", fontSize: 30 }}>{`CURRENT COMMAND:\n${ lastCommand }` }</Text>
         </View>
     );
 
@@ -438,26 +439,19 @@ const Controller = () => {
         </View>
     );
 
-    /*
-    { image != "" ?
-        <Image
-            source={{ uri: image }}
-            style={ styles.camera }
-            resizeMode="cover"
-        /> : <Text>Učitavanje kamere...</Text>
-    }
-     */
-
     return (
         <View style={ styles.container }>
             <View style={ styles.blackView }></View>
             { cameraOn && <Animated.View style={ styles.cameraContainer } { ...panResponder.panHandlers }>
-                <Image
-                    source={{ uri: image }}
-                    alt={ "Učitavanje kamere..." }
-                    style={ styles.camera }
-                    resizeMode="cover"
-                />
+                { image !== "" ?
+                    <Image
+                        key={image}
+                        source={{ uri: image }}
+                        style={ styles.camera }
+                        resizeMode="cover"
+                    /> :
+                    <Text>Učitavanje kamere...</Text>
+                }
             </Animated.View>
             }
             { inputPopupOn &&

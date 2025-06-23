@@ -36,7 +36,7 @@ const ControllerButton = ({ direction, buttonSize, play, bg }) => {
     });
 
     return (
-        <View style={[ styles.button, (direction !== "abort" && { borderRadius: buttonSize * 0.5 }) ]}>
+        <View style={[ styles.button, (direction !== "abort" && { borderRadius: buttonSize * 0.5 }) ]} testID={ "controllerButton" }>
             <Svg height={ buttonSize } width={ buttonSize }>
                 { direction === "abort" ?
                     <>

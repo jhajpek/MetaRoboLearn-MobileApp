@@ -6,7 +6,7 @@ const HEIGHT = Dimensions.get("screen").height * 0.17;
 
 
 const Header = ({ forLogin }) => {
-    const ALERT_TITLE = forLogin ? "Dobrodošli" : "Odabir igre";
+    const ALERT_TITLE = forLogin ? "DOBRODOŠLI" : "ODABIR IGRE";
     const ALERT_MESSAGE = forLogin ? "Da biste odabrali koju igru želite igrati, morate stisnuti gumb Prijava." : "Sretno s odabirom igre te upravljanjem robota!";
     const ALERT_CLOSE_TEXT = "Zatvori";
     const navigation = useNavigation();
